@@ -1,0 +1,17 @@
+{
+    "api-token": "<API-TOKEN here>",
+    "Doubt": {
+        "commands" : ["X", "x"],
+        "messageRegex": "[Xx]$",
+        "packs" : ["user_269942836_by_plakbot"],
+        "amount" : 5,
+        "transitiveReply": true
+    },
+
+    "Hmmm": {
+        "messageRegex": "[Hh][mM]+(\\s.*)?$",
+        "packs" : ["thonkang"],
+        "amount" : 1,
+        "transitiveReply": true
+    }
+}
