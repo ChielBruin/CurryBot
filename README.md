@@ -10,7 +10,7 @@ or
 ```bash
 python src/main.py my_config.json <API-TOKEN>
 ```
-Note that if you want the bot to reply to messages matching a given regex, 'privacy mode' should be enabled.
+Note that if you want the bot to reply to messages matching a given regex, 'privacy mode' should be disabled.
 
 ### Config
 ```json
