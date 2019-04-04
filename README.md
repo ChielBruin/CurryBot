@@ -17,20 +17,30 @@ Note that if you want the bot to reply to messages matching a given regex, 'priv
 {
     "api-token": "<API-TOKEN here>",
     "Hmmm": {
-        "commands": ["Hmmm"],
+        "commands": ["\hmmm"]
         "messageRegex": "[Hh][mM]+(\\s.*)?$",
-        "packs" : ["thonkang"],
+        "replies": {
+            "stickers" : [{"pack": "thonkang", "exclude":["<sticker_id>"]}]
+        },
         "amount" : 1,
-        "transitiveReply": true
-    }
+        "transitiveReply": true,
+        "replyTo": "all"
+    },
 }
 ```
 
 - `api-token`*: The Telegram api-token of the bot
-- `commands`*: A list of commands that trigger this action
-- `messageRegex`*: A regex that if it matches (from the start of a message) will trigger the action
-- `packs`: The ids of the Telegram sticker packs to select stickers from
-- `amount`: The amount of stickers to reply
-- `transitiveReply`: Whether replying with a trigger will reply to the original message (`true`), or the reply that triggered the action (`false`)
+- `<action name>` A name for this reply action
+  - `commands`*: A list of commands that trigger this action
+  - `messageRegex`*: A regex that if it matches (from the start of a message) will trigger the action
+  - `replies`: The possible replies for this action, can be both messages and stickers
+    - `stickers`*: 
+      - `pack`: The ids of the Telegram sticker pack to select stickers from
+      - `include`*: whitelisted sticker IDs 
+      - `exclude`*: blackliste sticker IDs 
+    - `messages`*: Messages that can be used as a reply. Messages can be templated using `\\<INT>` to insert matched groups from the original message.
+  - `amount`: The amount of stickers to reply
+  - `transitiveReply`: Whether replying with a trigger will reply to the original message (`true`), or the reply that triggered the action (`false`)
+  - `replyTo`: Specify what type of messages should trigger this action. Can be either `replies` (only replies), `messages` (only non-reply messages) or `all`
 
 *) Optional
