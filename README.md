@@ -17,7 +17,7 @@ Note that if you want the bot to reply to messages matching a given regex, 'priv
 {
     "api-token": "<API-TOKEN here>",
     "Hmmm": {
-        "commands": ["\hmmm"]
+        "commands": ["\\hmmm"],
         "messageRegex": "[Hh][mM]+(\\s.*)?$",
         "replies": {
             "stickers" : [{"pack": "thonkang", "exclude":["<sticker_id>"]}]
