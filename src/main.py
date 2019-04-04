@@ -102,7 +102,9 @@ def send_reply(botname, bot, chat_id, message):
 
 def apply_message(botname, message_text, pattern):
     """
-
+    If a messageregex is given and the reply contains placeholders,
+    fill in the placeholders.
+    Otherwise just give the reply back.
     """
     global CONFIG
     if 'messageRegex' in CONFIG[botname] and '\\' in pattern:

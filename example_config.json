@@ -3,15 +3,31 @@
     "Doubt": {
         "commands" : ["X", "x"],
         "messageRegex": "[Xx]$",
-        "packs" : ["user_269942836_by_plakbot"],
+        "replies": {
+            "stickers" : [{"pack": "user_269942836_by_plakbot"}]
+        },
         "amount" : 5,
-        "transitiveReply": true
+        "transitiveReply": true,
+        "replyTo": "both"
     },
 
     "Hmmm": {
         "messageRegex": "[Hh][mM]+(\\s.*)?$",
-        "packs" : ["thonkang"],
+        "replies": {
+            "stickers" : [{"pack": "thonkang"}]
+        },
         "amount" : 1,
-        "transitiveReply": true
-    }
+        "transitiveReply": true,
+        "replyTo": "both"
+    },
+
+    "Haskell": {
+        "messageRegex": "(.*\\s)?(([Hh]askell)|([Cc]urry))(\\s.*)?$",
+        "replies": {
+            "messages": ["Are you talking about me?", "Yes, I do like \\2"]
+        },
+        "amount" : 1,
+        "transitiveReply": false,
+        "replyTo": "both"
+    },
 }
