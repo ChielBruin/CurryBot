@@ -100,10 +100,16 @@ def send_reply(botname, bot, chat_id, message):
     else:
         reply_stickers(botname, bot, chat_id, message, msg_id)
 
-def apply_message(message_text, pattern):
+def apply_message(botname, message_text, pattern):
     """
 
     """
+    global CONFIG
+    if 'messageRegex' in CONFIG[botname] and '\\' in pattern:
+        try:
+            return re.sub(CONFIG[botname]['messageRegex'], pattern, message_text)
+        except Exception:
+            pass
     return pattern
 
 def reply_messages(botname, bot, chat_id, message, msg_id):
@@ -114,7 +120,7 @@ def reply_messages(botname, bot, chat_id, message, msg_id):
     for i in range(CONFIG[botname]['amount']):
         pattern = random_message(botname, exclude=selected)
         selected.append(pattern)
-        applied_message = apply_message(message.text, pattern)
+        applied_message = apply_message(botname, message.text, pattern)
         print(applied_message)
         if i > 0:
             bot.send_message(chat_id=chat_id, text=applied_message)
