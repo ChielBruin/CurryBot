@@ -1,9 +1,10 @@
 from telegram.ext import Updater, InlineQueryHandler, CommandHandler, MessageHandler, Filters
-import sys, re, random, json
+import sys, re, random, json, requests
 
 CONFIG   = {}
 STICKERS = {}
 MESSAGES = {}
+FLICKR_IMAGES = {}
 
 def random_sticker(botname, exclude=[]):
     """
@@ -12,6 +13,7 @@ def random_sticker(botname, exclude=[]):
     """
     global STICKERS
     stickers_from = STICKERS[botname]
+
     if len(stickers_from) is 1:
         return stickers_from[0]
 
@@ -43,6 +45,26 @@ def random_message(botname, exclude=[]):
         message = messages_from[rand]
         if message not in exclude:
              return message
+
+def random_flickr_image(botname, exclude=[]):
+    """
+    Select a random message for the given bot.
+    When the message is in the excluded list, another one is picked (if possible).
+    """
+    global FLICKR_IMAGES
+    pictures_from = FLICKR_IMAGES[botname]
+
+    if len(pictures_from) is 1:
+        return pictures_from[0]
+
+    if len(exclude) is len(pictures_from):
+        exclude = []
+
+    while True:
+        rand = random.randrange(len(pictures_from))
+        picture = pictures_from[rand]
+        if picture['url'] not in exclude:
+             return picture
 
 def message_handler(bot, update):
     """
@@ -97,8 +119,10 @@ def send_reply(botname, bot, chat_id, message):
 
     if reply_mode == 'messages':
         reply_messages(botname, bot, chat_id, message, msg_id)
-    else:
+    elif reply_mode == 'stickers':
         reply_stickers(botname, bot, chat_id, message, msg_id)
+    elif reply_mode == 'flickr_images':
+        reply_images(botname, bot, chat_id, message, msg_id)
 
 def apply_message(botname, message_text, pattern):
     """
@@ -146,13 +170,45 @@ def reply_stickers(botname, bot, chat_id, message, msg_id):
         else:
             bot.send_sticker(chat_id=chat_id, sticker=sticker, reply_to_message_id=msg_id)
 
+def reply_images(botname, bot, chat_id, message, msg_id):
+    """
+    Reply images for the given botname to the message.
+    """
+    global CONFIG
+
+    selected = []
+    for i in range(CONFIG[botname]['amount']):
+        image = random_flickr_image(botname, exclude=selected)
+        image_link = image['url']
+        selected.append(image_link)
+        print(image_link)
+        msg = '<a href="%s">📷</a>'%image_link
+        if i > 0:
+            bot.send_message(chat_id=chat_id, text=msg, parse_mode='HTML')
+        else:
+            bot.send_message(chat_id=chat_id, text=msg, reply_to_message_id=msg_id, parse_mode='HTML')
+
+def get_flickr_url(id):
+    try:
+        key = CONFIG['flickr-api-token']
+        response = requests.get('https://api.flickr.com/services/rest/?method=flickr.photos.getInfo&api_key=%s&photo_id=%s&format=json&nojsoncallback=1' % (key, id)).json()
+        if not 'photo' in response:
+            print('ERROR')
+            print(response)
+        photo = response['photo']
+        title = photo['title']['_content']
+        description = photo['description']['_content']
+        url = photo['urls']['url'][0]['_content']
+        return {'title': title, 'description': description, 'url': url, 'cache': None}
+    except:
+        return None
 
 def init_bot(botname, updater):
     """
     Initialize a bot by getting all the stickers and adding the handlers
     """
     global CONFIG
-    global STICKERS, MESSAGES
+    global STICKERS, MESSAGES, FLICKR_IMAGES
 
     dp = updater.dispatcher
     bot = CONFIG[botname]
@@ -160,6 +216,7 @@ def init_bot(botname, updater):
 
     STICKERS[botname] = []
     MESSAGES[botname] = []
+    FLICKR_IMAGES[botname] = []
 
     if not 'amount' in bot:
         print('Ivalid config for %s: \'amount\' not defined' % botname)
@@ -188,6 +245,35 @@ def init_bot(botname, updater):
 
         print('\t%d stickers loaded for %s' % (len(STICKERS[botname]), botname))
 
+    if 'flickr_images' in replies:
+        api_key = CONFIG['flickr-api-token']
+        for pack in replies['flickr_images']:
+            response = requests.get('https://api.flickr.com/services/rest/?method=flickr.photosets.getPhotos&api_key=%s&photoset_id=%s&format=json&nojsoncallback=1' % (api_key, pack['imageset'])).json()
+            if 'photoset' not in response:
+                print('ERROR')
+                print(response)
+            flickr_album = response['photoset']
+            name = flickr_album['title']
+            images = list(map(lambda x: x['id'], flickr_album['photo']))
+
+            include = pack['include'] if 'include' in pack else images
+            exclude = pack['exclude'] if 'exclude' in pack else []
+
+            print('\tLoaded flickr album \'%s\' containing %d pictures' %
+                    (name, len(images)))
+
+            selected = list(filter(
+                lambda x: (x in include) and (x not in exclude),
+                images))
+
+            print('\t\tLoading %d images from the album (This may take a while)' % len(selected))
+            selected = list(filter(lambda x: not x is None, map(lambda id: get_flickr_url(id), selected)))
+
+            print('\t\tSelected %d images from the album' % len(selected))
+            FLICKR_IMAGES[botname].extend(selected)
+
+        print('\t%d images loaded for %s' % (len(FLICKR_IMAGES[botname]), botname))
+
     if 'messages' in replies:
         MESSAGES[botname].extend(replies['messages'])
         print('\t%d messages loaded for %s' % (len(MESSAGES[botname]), botname))
@@ -205,7 +291,7 @@ def start_bot(token):
     updater = Updater(token)
 
     for bot_config in CONFIG:
-        if bot_config == 'api-token':
+        if 'api-token' in bot_config:
             continue
         print('Initializing bot %s' % bot_config)
         init_bot(bot_config, updater)
@@ -225,8 +311,8 @@ if __name__ == '__main__':
     with open(sys.argv[1], "r") as config_file:
         CONFIG = json.load(config_file)
 
-    if 'api-token' in CONFIG:
-        start_bot(CONFIG['api-token'])
+    if 'telegram-api-token' in CONFIG:
+        start_bot(CONFIG['telegram-api-token'])
     elif len(sys.argv) > 2:
         start_bot(sys.argv[2])
     else:
