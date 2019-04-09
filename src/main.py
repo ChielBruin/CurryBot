@@ -1,320 +1,40 @@
-from telegram.ext import Updater, InlineQueryHandler, CommandHandler, MessageHandler, Filters
-import sys, re, random, json, requests
+import sys, json
 
-CONFIG   = {}
-STICKERS = {}
-MESSAGES = {}
-FLICKR_IMAGES = {}
-
-def random_sticker(botname, exclude=[]):
-    """
-    Select a random sticker for the given bot.
-    When the sticker is in the excluded list, another one is picked (if possible).
-    """
-    global STICKERS
-    stickers_from = STICKERS[botname]
-
-    if len(stickers_from) is 1:
-        return stickers_from[0]
-
-    if len(exclude) is len(stickers_from):
-        exclude = []
-
-    while True:
-        rand = random.randrange(len(stickers_from))
-        sticker = stickers_from[rand]
-        if sticker.file_id not in exclude:
-             return sticker
-
-def random_message(botname, exclude=[]):
-    """
-    Select a random message for the given bot.
-    When the message is in the excluded list, another one is picked (if possible).
-    """
-    global MESSAGES
-    messages_from = MESSAGES[botname]
-
-    if len(messages_from) is 1:
-        return messages_from[0]
-
-    if len(exclude) is len(messages_from):
-        exclude = []
-
-    while True:
-        rand = random.randrange(len(messages_from))
-        message = messages_from[rand]
-        if message not in exclude:
-             return message
-
-def random_flickr_image(botname, exclude=[]):
-    """
-    Select a random message for the given bot.
-    When the message is in the excluded list, another one is picked (if possible).
-    """
-    global FLICKR_IMAGES
-    pictures_from = FLICKR_IMAGES[botname]
-
-    if len(pictures_from) is 1:
-        return pictures_from[0]
-
-    if len(exclude) is len(pictures_from):
-        exclude = []
-
-    while True:
-        rand = random.randrange(len(pictures_from))
-        picture = pictures_from[rand]
-        if picture['url'] not in exclude:
-             return picture
-
-def message_handler(bot, update):
-    """
-    Check if the received message matches any of the regexes.
-    If so, send the stickers
-    """
-    try:
-        global CONFIG
-        message = update.message
-
-        for botname in CONFIG:
-            if 'messageRegex' in CONFIG[botname]:
-                regex = CONFIG[botname]['messageRegex']
-
-                if re.match(regex, message.text):
-                    send_reply(botname, bot, message.chat_id, message)
-    except Exception as e:
-        print(e)
-
-def command_handler(botname, bot, update):
-    """
-    Reply the stickers when the command of a given bot is called
-    """
-    try:
-        chat_id = update.message.chat_id
-        send_reply(botname, bot, chat_id, update.message)
-    except Exception as e:
-        print(e)
-
-def send_reply(botname, bot, chat_id, message):
-    """
-    Send a reply to the given message
-    If this message is a reply, and transitive replies are enabled,
-    Reply to the original message.
-    """
-    global CONFIG
-
-    reply_to = CONFIG[botname]['replyTo']
-    if reply_to == "replies" and not message.reply_to_message:
-        return
-    elif reply_to == "messages" and message.reply_to_message:
-        return
-
-    if CONFIG[botname]['transitiveReply'] and message.reply_to_message:
-        msg_id = message.reply_to_message.message_id
-    else:
-        msg_id = message.message_id
-
-    replies = CONFIG[botname]['replies']
-    reply_modes = list(replies.keys())
-    reply_mode = reply_modes[random.randrange(len(reply_modes))]
-
-    if reply_mode == 'messages':
-        reply_messages(botname, bot, chat_id, message, msg_id)
-    elif reply_mode == 'stickers':
-        reply_stickers(botname, bot, chat_id, message, msg_id)
-    elif reply_mode == 'flickr_images':
-        reply_images(botname, bot, chat_id, message, msg_id)
-
-def apply_message(botname, message_text, pattern):
-    """
-    If a messageregex is given and the reply contains placeholders,
-    fill in the placeholders.
-    Otherwise just give the reply back.
-    """
-    global CONFIG
-    if 'messageRegex' in CONFIG[botname] and '\\' in pattern:
-        try:
-            return re.sub(CONFIG[botname]['messageRegex'], pattern, message_text)
-        except Exception:
-            pass
-    return pattern
-
-def reply_messages(botname, bot, chat_id, message, msg_id):
-    """
-    Reply messages for the given botname to the message.
-    """
-    selected = []
-    for i in range(CONFIG[botname]['amount']):
-        pattern = random_message(botname, exclude=selected)
-        selected.append(pattern)
-        applied_message = apply_message(botname, message.text, pattern)
-        print(applied_message)
-        if i > 0:
-            bot.send_message(chat_id=chat_id, text=applied_message)
-        else:
-            bot.send_message(chat_id=chat_id, text=applied_message, reply_to_message_id=msg_id)
+from bot import CurryBot
 
 
-def reply_stickers(botname, bot, chat_id, message, msg_id):
-    """
-    Reply stickers for the given botname to the message.
-    """
-    global CONFIG
-
-    selected = []
-    for i in range(CONFIG[botname]['amount']):
-        sticker = random_sticker(botname, exclude=selected)
-        selected.append(sticker.file_id)
-        print(sticker.emoji)
-        if i > 0:
-            bot.send_sticker(chat_id=chat_id, sticker=sticker)
-        else:
-            bot.send_sticker(chat_id=chat_id, sticker=sticker, reply_to_message_id=msg_id)
-
-def reply_images(botname, bot, chat_id, message, msg_id):
-    """
-    Reply images for the given botname to the message.
-    """
-    global CONFIG
-
-    selected = []
-    for i in range(CONFIG[botname]['amount']):
-        image = random_flickr_image(botname, exclude=selected)
-        image_link = image['url']
-        selected.append(image_link)
-        print(image_link)
-        msg = '<a href="%s">📷</a>'%image_link
-        if i > 0:
-            bot.send_message(chat_id=chat_id, text=msg, parse_mode='HTML')
-        else:
-            bot.send_message(chat_id=chat_id, text=msg, reply_to_message_id=msg_id, parse_mode='HTML')
-
-def get_flickr_url(id):
-    try:
-        key = CONFIG['flickr-api-token']
-        response = requests.get('https://api.flickr.com/services/rest/?method=flickr.photos.getInfo&api_key=%s&photo_id=%s&format=json&nojsoncallback=1' % (key, id)).json()
-        if not 'photo' in response:
-            print('ERROR')
-            print(response)
-        photo = response['photo']
-        title = photo['title']['_content']
-        description = photo['description']['_content']
-        url = photo['urls']['url'][0]['_content']
-        return {'title': title, 'description': description, 'url': url, 'cache': None}
-    except:
-        return None
-
-def init_bot(botname, updater):
-    """
-    Initialize a bot by getting all the stickers and adding the handlers
-    """
-    global CONFIG
-    global STICKERS, MESSAGES, FLICKR_IMAGES
-
-    dp = updater.dispatcher
-    bot = CONFIG[botname]
-    amount = bot['amount']
-
-    STICKERS[botname] = []
-    MESSAGES[botname] = []
-    FLICKR_IMAGES[botname] = []
-
-    if not 'amount' in bot:
-        print('Ivalid config for %s: \'amount\' not defined' % botname)
-
-    if not 'transitiveReply' in bot:
-        print('Ivalid config for %s: \'transitiveReply\' not defined' % botname)
-
-    if not 'replyTo' in bot:
-        print('Ivalid config for %s: \'replyTo\' not defined' % botname)
-
-    replies = bot['replies']
-    if 'stickers' in replies:
-        for pack in replies['stickers']:
-            stickerpack = updater.bot.get_sticker_set(pack['pack'])
-            include = pack['include'] if 'include' in pack else list(map(lambda x: x.file_id, stickerpack.stickers))
-            exclude = pack['exclude'] if 'exclude' in pack else []
-
-            print('\tLoaded stickerpack \'%s\' containing %d stickers' %
-                    (stickerpack.title, len(stickerpack.stickers)))
-
-            selected = list(filter(
-                lambda x: (x.file_id in include) and (x.file_id not in exclude),
-                stickerpack.stickers))
-            print('\t\tSelected %d stickers from the pack' % len(selected))
-            STICKERS[botname].extend(selected)
-
-        print('\t%d stickers loaded for %s' % (len(STICKERS[botname]), botname))
-
-    if 'flickr_images' in replies:
-        api_key = CONFIG['flickr-api-token']
-        for pack in replies['flickr_images']:
-            response = requests.get('https://api.flickr.com/services/rest/?method=flickr.photosets.getPhotos&api_key=%s&photoset_id=%s&format=json&nojsoncallback=1' % (api_key, pack['imageset'])).json()
-            if 'photoset' not in response:
-                print('ERROR')
-                print(response)
-            flickr_album = response['photoset']
-            name = flickr_album['title']
-            images = list(map(lambda x: x['id'], flickr_album['photo']))
-
-            include = pack['include'] if 'include' in pack else images
-            exclude = pack['exclude'] if 'exclude' in pack else []
-
-            print('\tLoaded flickr album \'%s\' containing %d pictures' %
-                    (name, len(images)))
-
-            selected = list(filter(
-                lambda x: (x in include) and (x not in exclude),
-                images))
-
-            print('\t\tLoading %d images from the album (This may take a while)' % len(selected))
-            selected = list(filter(lambda x: not x is None, map(lambda id: get_flickr_url(id), selected)))
-
-            print('\t\tSelected %d images from the album' % len(selected))
-            FLICKR_IMAGES[botname].extend(selected)
-
-        print('\t%d images loaded for %s' % (len(FLICKR_IMAGES[botname]), botname))
-
-    if 'messages' in replies:
-        MESSAGES[botname].extend(replies['messages'])
-        print('\t%d messages loaded for %s' % (len(MESSAGES[botname]), botname))
-
-    if 'commands' in bot:
-        print('\tAdding %d command handles' % len(bot['commands']))
-        for command in bot['commands']:
-            dp.add_handler(CommandHandler(command, (lambda b, u, bot=botname: command_handler(bot, b, u))))
-
-def start_bot(token):
-    """
-    Start the bot with the given token
-    """
-    global CONFIG
-    updater = Updater(token)
-
-    for bot_config in CONFIG:
-        if 'api-token' in bot_config:
-            continue
-        print('Initializing bot %s' % bot_config)
-        init_bot(bot_config, updater)
-
-    print('Adding shared message handle')
-    updater.dispatcher.add_handler(MessageHandler(Filters.text, message_handler))
-
-    print('\nBot started!\n')
-    updater.start_polling()
-    updater.idle()
-
-if __name__ == '__main__':
+def main():
     if len(sys.argv) == 1:
         print('Please specify the config file')
-        exit(1)
+        exit(-1)
 
+    config = {}
     with open(sys.argv[1], "r") as config_file:
-        CONFIG = json.load(config_file)
+        config = json.load(config_file)
 
-    if 'telegram-api-token' in CONFIG:
-        start_bot(CONFIG['telegram-api-token'])
+    curry_bot = None
+    if 'telegram-api-token' in config:
+        curry_bot = CurryBot(config['telegram-api-token'])
     elif len(sys.argv) > 2:
-        start_bot(sys.argv[2])
+        curry_bot = CurryBot(sys.argv[2])
     else:
-        token = input('What is your token?\n')
-        start_bot(token)
+        token = input('What is your Telegram API token?\n')
+        curry_bot = CurryBot(token)
+
+    update_bot_config(curry_bot, config)
+    curry_bot.start()
+
+
+def update_bot_config(bot, config):
+    for action in config:
+        if 'api-token' in action:
+            bot.add_api_key(action[:-10], config[action])
+            continue
+
+        action_config = config[action]
+        print('Initializing action %s' % action)
+        bot.config_action(action, action_config)
+    print('All actions initialized')
+
+if __name__ == '__main__':
+    main()
