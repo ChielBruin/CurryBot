@@ -3,7 +3,14 @@ from action import Action
 import requests
 
 class FlickrAction (Action):
+    '''
+    An action that sends images from Flickr albums when triggered.
+    '''
+
     def __init__(self, config, api_key):
+        '''
+        Initialize a FlickrAction by preloading the images in the given albums.
+        '''
         super(FlickrAction, self).__init__()
         self.key = api_key
 
@@ -25,6 +32,9 @@ class FlickrAction (Action):
         print('\t%d images loaded' % len(self.ids))
 
     def load_image(self, id):
+        '''
+        Load an image from the given id.
+        '''
         try:
             photo = self.make_request('flickr.photos.getInfo', 'photo', {'photo_id': id})
             title = photo['title']['_content']
@@ -35,6 +45,9 @@ class FlickrAction (Action):
             return None
 
     def make_request(self, method, expected, args={}):
+        '''
+        Make a request to the Flickr API
+        '''
         arg_string = ""
         for arg in args:
             arg_string += '&%s=%s' % (arg, args[arg])

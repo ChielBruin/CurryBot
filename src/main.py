@@ -4,6 +4,10 @@ from bot import CurryBot
 
 
 def main():
+    '''
+    Main function.
+    Loads the config and starts the bot.
+    '''
     if len(sys.argv) == 1:
         print('Please specify the config file')
         exit(-1)
@@ -26,6 +30,10 @@ def main():
 
 
 def update_bot_config(bot, config):
+    '''
+    For each action in the config, create/update the actions config.
+    '''
+    #TODO: The message and ommand handlers should be removed when updating
     for action in config:
         if 'api-token' in action:
             bot.add_api_key(action[:-10], config[action])

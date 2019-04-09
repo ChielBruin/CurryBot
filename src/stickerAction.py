@@ -2,7 +2,14 @@ from action import Action
 
 
 class StickerAction (Action):
+    '''
+    An action that sends stickers from given Telegram sticker packs.
+    '''
+
     def __init__(self, config, bot):
+        '''
+        Configure this action by loading all the stickers from the packs.
+        '''
         super(StickerAction, self).__init__()
 
         for pack in config:

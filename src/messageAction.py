@@ -4,7 +4,15 @@ import hashlib, re
 
 
 class MessageAction (Action):
+    '''
+    An action that sends messages when triggered.
+    These messages can use matched groups from the original message.
+    '''
+
     def __init__(self, config, regex):
+        '''
+        Load all the messages from the given config
+        '''
         super(MessageAction, self).__init__()
 
         self.regex = regex
@@ -16,6 +24,10 @@ class MessageAction (Action):
         print('\t%d messages loaded' % len(self.ids))
 
     def apply_message(self, message_text, reply_text):
+        '''
+        Given the original message and the reply text pattern,
+        try filling in the holes in the reply pattern.
+        '''
         if self.regex and '\\' in reply_text:
             try:
                 return re.sub(self.regex, reply_text, message_text)

@@ -7,11 +7,20 @@ from messageAction import MessageAction
 
 
 class CurryBotMessageHandler (object):
+    '''
+    Handler for an action group.
+    Handles random selection of actions (ensuring no repetitions).
+    '''
+
     def __init__(self, bot, config):
         self.bot = bot
         self.update(config)
 
     def update (self, config):
+        '''
+        Update this handler using the given config.
+        Registers the correct actions and commands.
+        '''
         self.amount = config['amount']
         self.transitiveReply = config['transitiveReply']
         self.reply_to = config['replyTo']
@@ -40,6 +49,10 @@ class CurryBotMessageHandler (object):
 
 
     def on_receive_message(self, bot, update):
+        '''
+        Called when a message is received by the bot.
+        When this message matches this handler, trigger the actions.
+        '''
         try:
             message = update.message
             if re.match(self.regex, message.text):
@@ -49,6 +62,10 @@ class CurryBotMessageHandler (object):
             print(e)
 
     def on_receive_command(self, bot, update):
+        '''
+        Called when a command is received by the bot.
+        This will trigger the actions.
+        '''
         try:
             self.on_trigger(bot, update.message)
         except Exception as e:
@@ -56,6 +73,10 @@ class CurryBotMessageHandler (object):
             print(e)
 
     def select_action(self):
+        '''
+        Select a random action, keeping in mind their weight.
+        THis ensures fair and configurable selection of actions.
+        '''
         size = sum(map(lambda x: len(x), self.actions))
         rand = random.randrange(size)
 
@@ -68,6 +89,10 @@ class CurryBotMessageHandler (object):
                 continue
 
     def on_trigger(self, bot, message):
+        '''
+        Called when this handler is triggered.
+        Triggers the actions with the correct parameters.
+        '''
         if self.reply_to == "replies" and not message.reply_to_message:
             return
         elif self.reply_to == "messages" and message.reply_to_message:
