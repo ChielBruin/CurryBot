@@ -1,4 +1,4 @@
-from telegram.ext import Updater, MessageHandler, Filters
+from telegram.ext import Updater, MessageHandler, CommandHandler, Filters
 
 from messageHandler import CurryBotMessageHandler
 
@@ -11,6 +11,9 @@ class CurryBot (object):
         self.dispatcher = self.updater.dispatcher
         self.dispatcher.add_handler(MessageHandler(Filters.text,
                                     (lambda bot, update, self=self: self.on_receive_message(bot, update))))
+        self.dispatcher.add_handler(CommandHandler('info',
+                                       (lambda bot, update, self=self: self.on_info_command(bot, update))))
+
         self.handlers = {}
         self.keys = {}
 
@@ -53,3 +56,22 @@ class CurryBot (object):
         Get a key from the keystore.
         '''
         return self.keys[name]
+
+    def on_info_command(self, bot, update):
+        '''
+        Triggers when the /info command is used.
+        Prints relevant chat info to the console.
+        If replied to a sticker, print the sticker id as well.
+        '''
+        message = update.message
+
+        print('\nInfo command used:')
+        print('\tChat_id: %s' % message.chat.id)
+        if message.reply_to_message and message.reply_to_message.sticker:
+            sticker = message.reply_to_message.sticker
+            print('\tSticker_id: %s' % sticker.file_id)
+            print('\tPack_id: %s' % sticker.set_name)
+        else:
+            msg = '`putStrLn "Hello, World!"`\nI reply to your messages when I feel the need to.'
+            bot.send_message(chat_id=message.chat_id, text=msg, parse_mode='Markdown')
+        print()
