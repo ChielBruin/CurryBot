@@ -26,6 +26,14 @@ class CurryBotMessageHandler (object):
         self.reply_to = config['replyTo']
         self.actions = []
 
+        if 'chats' in config:
+            chats = config['chats']
+            self.groups_include = chats['include'] if 'include' in chats else None
+            self.groups_exclude = chats['exclude'] if 'exclude' in chats else []
+        else:
+            self.groups_include = None
+            self.groups_exclude = []
+
         if 'messageRegex' in config:
             self.regex = config['messageRegex']
         else:
@@ -93,6 +101,11 @@ class CurryBotMessageHandler (object):
         Called when this handler is triggered.
         Triggers the actions with the correct parameters.
         '''
+        # If current chat is excluded, skip the trigger
+        chat_id = str(message.chat.id)
+        if (self.groups_include and (chat_id not in self.groups_include)) or (chat_id in self.groups_exclude):
+            return
+
         if self.reply_to == "replies" and not message.reply_to_message:
             return
         elif self.reply_to == "messages" and message.reply_to_message:
