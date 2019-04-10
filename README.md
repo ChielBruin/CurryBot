@@ -45,7 +45,13 @@ Note that if you want the bot to reply to messages matching a given regex, 'priv
       - `include`*: whitelisted image IDs
       - `exclude`*: blacklisted image IDs
   - `amount`: The amount of stickers to reply
+  - `chats`*: Whitelist or blacklist certain chats
+    - `include`*: List of chat_ids to whitelist
+    - `exclude`*: List of chat_ids to blacklist
   - `transitiveReply`: Whether replying with a trigger will reply to the original message (`true`), or the reply that triggered the action (`false`)
   - `replyTo`: Specify what type of messages should trigger this action. Can be either `replies` (only replies), `messages` (only non-reply messages) or `all`
 
 *) Optional
+
+Use the `/info` command to print the current chat_id to console.
+If this command is replied to a sticker, the sticker_id and stickerset_id will be displayed as well.

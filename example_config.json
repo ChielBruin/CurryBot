@@ -7,6 +7,7 @@
             "stickers" : [{"pack": "user_269942836_by_plakbot"}]
         },
         "amount" : 5,
+        "chats": {"include": [310311697]},
         "transitiveReply": true,
         "replyTo": "both"
     },
