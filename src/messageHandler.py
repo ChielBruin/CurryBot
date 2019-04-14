@@ -21,7 +21,7 @@ class CurryBotMessageHandler (object):
         Update this handler using the given config.
         Registers the correct actions and commands.
         '''
-        self.amount = config['amount']
+        self.amount = int(config['amount'])
         self.transitiveReply = config['transitiveReply']
         self.reply_to = config['replyTo']
         self.actions = []
@@ -35,9 +35,18 @@ class CurryBotMessageHandler (object):
             self.groups_exclude = []
 
         if 'messageRegex' in config:
-            self.regex = config['messageRegex']
+            self.regex = str(config['messageRegex'])
         else:
             self.regex = None
+
+        if 'accuracy' in config:
+            acc = config['accuracy']
+            if isinstance(acc, str):
+                acc = float(acc[:-1]) / 100      # Convert percentage
+
+            self.accuracy = max(0, min(1, acc))
+        else:
+            self.accuracy = 1
 
         if 'commands' in config:
             for command in config['commands']:
@@ -109,6 +118,9 @@ class CurryBotMessageHandler (object):
         if self.reply_to == "replies" and not message.reply_to_message:
             return
         elif self.reply_to == "messages" and message.reply_to_message:
+            return
+
+        if self.accuracy < random.random():
             return
 
         target = message.message_id
