@@ -63,15 +63,29 @@ class CurryBot (object):
         Prints relevant chat info to the console.
         If replied to a sticker, print the sticker id as well.
         '''
-        message = update.message
+        try:
+            message = update.message
+            bot.forward_message(message.chat.id, from_chat_id=310311697, message_id=1515)
 
-        print('\nInfo command used:')
-        print('\tChat_id: %s' % message.chat.id)
-        if message.reply_to_message and message.reply_to_message.sticker:
-            sticker = message.reply_to_message.sticker
-            print('\tSticker_id: %s' % sticker.file_id)
-            print('\tPack_id: %s' % sticker.set_name)
-        else:
-            msg = '`putStrLn "Hello, World!"`\nI reply to your messages when I feel the need to.'
-            bot.send_message(chat_id=message.chat_id, text=msg, parse_mode='Markdown')
-        print()
+            print('\nInfo command used:')
+            print('\tChat_id: %d' % message.chat.id)
+            if message.reply_to_message:
+                message = message.reply_to_message
+                if message.sticker:
+                    sticker = message.sticker
+                    print('\tSticker')
+                    print('\t  Sticker_id: %s' % sticker.file_id)
+                    print('\t  Pack_id: %s' % sticker.set_name)
+                elif message.forward_from:
+                    print('\tForwarded message')
+                    print('\t  Message_id: %d' % message.message_id)
+
+                else:
+                    print(message)
+            else:
+                msg = '`putStrLn "Hello, World!"`\nI reply to your messages when I feel the need to.'
+                bot.send_message(chat_id=message.chat_id, text=msg, parse_mode='Markdown')
+            print()
+        except Exception as e:
+            print('Error in info command handling:')
+            print(e)
