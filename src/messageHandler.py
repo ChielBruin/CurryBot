@@ -4,6 +4,7 @@ import re, random
 from stickerAction import StickerAction
 from flickrAction  import FlickrAction
 from messageAction import MessageAction
+from forwardAction import ForwardAction
 
 
 class CurryBotMessageHandler (object):
@@ -61,6 +62,8 @@ class CurryBotMessageHandler (object):
                 self.actions.append(StickerAction(replies[action], self.bot.updater.bot))
             elif action == 'flickr_images':
                 self.actions.append(FlickrAction(replies[action], self.bot.get_api_key('flickr')))
+            elif action == 'forward':
+                self.actions.append(ForwardAction(replies[action]))
             else:
                 print('Unrecognized reply type \'%s\'' % action)
 
