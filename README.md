@@ -45,6 +45,9 @@ Note that if you want the bot to reply to messages matching a given regex, 'priv
       - `imageset`: The id of the Flickr album to select pictures from
       - `include`*: whitelisted image IDs
       - `exclude`*: blacklisted image IDs
+    - `forward`*:
+      - `chat_id`: The id of the chat the message is from
+      - `message_id`: The id of the message in that chat
   - `amount`: The amount of stickers to reply
   - `accuracy`*: The chance that a trigger will result in a reply. Can be either a number between 0 an 1, or a percentage (e.g. "25%")
   - `chats`*: Whitelist or blacklist certain chats

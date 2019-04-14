@@ -15,7 +15,8 @@
     "Hmmm": {
         "messageRegex": "[Hh][mM]+(\\s.*)?$",
         "replies": {
-            "stickers" : [{"pack": "thonkang"}]
+            "stickers": [{"pack": "thonkang"}],
+            "forward": [{"chat_id": "<chat_id>", "message_id": "<msg_id>"}]
         },
         "amount" : 1,
         "transitiveReply": true,
