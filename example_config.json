@@ -28,6 +28,7 @@
             "messages": ["Are you talking about me?", "Yes, I do like \\2"]
         },
         "amount" : 1,
+        "accuracy": "50%",
         "transitiveReply": false,
         "replyTo": "both"
     },

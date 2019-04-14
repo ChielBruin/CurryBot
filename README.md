@@ -23,6 +23,7 @@ Note that if you want the bot to reply to messages matching a given regex, 'priv
             "stickers" : [{"pack": "thonkang", "exclude":["<sticker_id>"]}]
         },
         "amount" : 1,
+        "accuracy": 0.9,
         "transitiveReply": true,
         "replyTo": "all"
     },
@@ -45,6 +46,7 @@ Note that if you want the bot to reply to messages matching a given regex, 'priv
       - `include`*: whitelisted image IDs
       - `exclude`*: blacklisted image IDs
   - `amount`: The amount of stickers to reply
+  - `accuracy`*: The chance that a trigger will result in a reply. Can be either a number between 0 an 1, or a percentage (e.g. "25%")
   - `chats`*: Whitelist or blacklist certain chats
     - `include`*: List of chat_ids to whitelist
     - `exclude`*: List of chat_ids to blacklist
