@@ -1,8 +1,10 @@
 {
     "api-token": "<API-TOKEN here>",
     "Doubt": {
-        "commands" : ["X", "x"],
-        "messageRegex": "[Xx]$",
+        "triggers": {
+            "commands" : ["X", "x"],
+            "message": ["[Xx]$"]
+        },
         "replies": {
             "stickers" : [{"pack": "user_269942836_by_plakbot"}]
         },
@@ -15,7 +17,10 @@
     },
 
     "Hmmm": {
-        "messageRegex": "[Hh][mM]+(\\s.*)?$",
+        "triggers": {
+            "message": ["[Hh][mM]+(\\s.*)?$"],
+            "image": true
+        },
         "replies": {
             "stickers": [{"pack": "thonkang"}],
             "forward": [{"chat_id": "<chat_id>", "message_id": "<msg_id>"}]
@@ -28,7 +33,10 @@
     },
 
     "Haskell": {
-        "messageRegex": "(.*\\s)?(([Hh]askell)|([Cc]urry))(\\s.*)?$",
+        "triggers": {
+            "message": ["(.*\\s)?(([Hh]askell)|([Cc]urry))(\\s.*)?$"],
+            "url": ["haskell.org"]
+        },
         "replies": {
             "messages": ["Are you talking about me?", "Yes, I do like \\2"]
         },

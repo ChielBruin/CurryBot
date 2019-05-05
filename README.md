@@ -17,8 +17,10 @@ Note that if you want the bot to reply to messages matching a given regex, 'priv
 {
     "api-token": "<API-TOKEN here>",
     "Hmmm": {
-        "commands": ["hmmm"],
-        "messageRegex": "[Hh][mM]+(\\s.*)?$",
+        "triggers": {
+            "commands": ["hmmm"],
+            "Regex": ["[Hh][mM]+(\\s.*)?$"]
+        },
         "replies": {
             "stickers" : [{"pack": "thonkang", "exclude":["<sticker_id>"]}]
         },
@@ -34,9 +36,18 @@ Note that if you want the bot to reply to messages matching a given regex, 'priv
 
 - `telegram-api-token`*: The Telegram api-token of the bot
 - `flickr-api-token`*: The Flickr api-token of the bot
-- `<action name>` A name for this reply action
-  - `commands`*: A list of commands that trigger this action
-  - `messageRegex`*: A regex that if it matches (from the start of a message) will trigger the action
+- `<action name>`: A name for this reply action
+  - `triggers`: Configure what triggers a reply
+    - `commands`*: A list of commands that trigger this action
+    - `messageRegex`*: A list of regexes that if it matches (from the start of a message) will trigger the action
+    - `url`*: A list of (parts of) urls that trigger this action
+    - `audio`*: boolean whether to trigger this action (`false` by default)
+    - `video`*: boolean whether to trigger this action (`false` by default)
+    - `image`*: boolean whether to trigger this action (`false` by default)
+    - `contact`*: boolean whether to trigger this action (`false` by default)
+    - `document`*: boolean whether to trigger this action (`false` by default)
+    - `sticker`*: boolean whether to trigger this action (`false` by default)
+    - `voice`*: boolean whether to trigger this action (`false` by default)
   - `replies`: The possible replies for this action, can be both messages and stickers
     - `stickers`*:
       - `pack`: The id of the Telegram sticker pack to select stickers from
@@ -56,9 +67,9 @@ Note that if you want the bot to reply to messages matching a given regex, 'priv
     - `include`*: List of chat_ids to whitelist
     - `exclude`*: List of chat_ids to blacklist
   - `replyBehaviour`: The behaviour for replying to given message types. The behaviour is a list of actions separated by `->`, where valid actions are `reply`, `transitiveReply`, `send` and `none`.
-    - `message`: Rule used for normal messages
-    - `reply`: Rule used for replies
-    - `forward`: Rule used for forwarded messages
+    - `message`*: Rule used for normal messages
+    - `reply`*: Rule used for replies
+    - `forward`*: Rule used for forwarded messages
 
 
 *) Optional

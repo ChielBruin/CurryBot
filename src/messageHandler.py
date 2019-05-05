@@ -49,9 +49,9 @@ class CurryBotMessageHandler (object):
         self.update_actions(config)
 
     def update_triggers(self, config):
-        """
+        '''
         Update the trigger configs.
-        """
+        '''
         self.triggers = {}
         if 'triggers' not in config or config['triggers'] is {}:
             raise Exception('Malformed config, \'triggers\' could not be found')
@@ -91,9 +91,9 @@ class CurryBotMessageHandler (object):
             self.add_trigger('voice', lambda b, u: self.on_trigger(b, u.message))
 
     def update_actions(self, config):
-        """
+        '''
         Update the settings for the action handlers.
-        """
+        '''
         replies = config['replies']
         for action in replies:
             if action == 'messages':
