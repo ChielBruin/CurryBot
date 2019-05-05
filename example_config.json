@@ -12,8 +12,8 @@
         "chats": {"include": [310311697]},
         "replyBehaviour": {
             "message": "reply -> send*",
-            "reply": "transitiveReply -> send*",
-        },
+            "reply": "transitiveReply -> send*"
+        }
     },
 
     "Hmmm": {
@@ -28,8 +28,8 @@
         "amount" : 1,
         "replyBehaviour": {
             "message": "reply -> send*",
-            "reply": "transitiveReply -> send*",
-        },
+            "reply": "transitiveReply -> send*"
+        }
     },
 
     "Haskell": {
@@ -44,7 +44,7 @@
         "accuracy": "50%",
         "replyBehaviour": {
             "message": "reply -> send*",
-            "reply": "transitiveReply -> send*",
-        },
-    },
+            "reply": "transitiveReply -> send*"
+        }
+    }
 }

@@ -95,6 +95,7 @@ class CurryBotMessageHandler (object):
         Update the settings for the action handlers.
         '''
         replies = config['replies']
+        triggers = config['triggers']
         for action in replies:
             if action == 'messages':
                 self.actions.append(MessageAction(replies[action], triggers['message'] if 'message' in triggers else []))
