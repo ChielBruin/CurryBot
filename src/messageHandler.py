@@ -36,11 +36,6 @@ class CurryBotMessageHandler (object):
             self.groups_include = None
             self.groups_exclude = []
 
-        if 'messageRegex' in config:
-            self.regex = str(config['messageRegex'])
-        else:
-            self.regex = None
-
         if 'accuracy' in config:
             acc = config['accuracy']
             if isinstance(acc, str):
@@ -50,15 +45,49 @@ class CurryBotMessageHandler (object):
         else:
             self.accuracy = 1
 
-        if 'commands' in config:
-            for command in config['commands']:
+
+        self.triggers = {}
+        if 'triggers' not in config or config['triggers'] is {}:
+            raise Exception('Malformed config, \'triggers\' could not be found')
+
+        triggers = config['triggers']
+        if 'command' in triggers:
+            for command in triggers['command']:
                 self.bot.dispatcher.add_handler(CommandHandler(command,
-                                               (lambda bot, update, self=self: self.on_receive_command(bot, update))))
+                                                (lambda bot, update, self=self: self.on_receive_command(bot, update))))
+        if 'message' in triggers:
+            self.add_trigger('text',
+                                lambda b, u: self.on_receive_message(b, u, triggers['message']))
+
+        if 'url' in triggers:
+            self.add_trigger('text',
+                                lambda b, u: self.on_receive_message(b, u, map(lambda x: r'.*%s' % x, triggers['url'])))
+
+        if 'audio' in triggers and triggers['audio']:
+            self.add_trigger('audio', lambda b, u: self.on_trigger(b, u.message))
+
+        if 'video' in triggers and triggers['video']:
+            self.add_trigger('video', lambda b, u: self.on_trigger(b, u.message))
+
+        if 'image' in triggers and triggers['image']:
+            self.add_trigger('image', lambda b, u: self.on_trigger(b, u.message))
+
+        if 'contact' in triggers and triggers['contact']:
+            self.add_trigger('contact', lambda b, u: self.on_trigger(b, u.message))
+
+        if 'document' in triggers and triggers['document']:
+            self.add_trigger('document', lambda b, u: self.on_trigger(b, u.message))
+
+        if 'sticker' in triggers and triggers['sticker']:
+            self.add_trigger('sticker', lambda b, u: self.on_trigger(b, u.message))
+
+        if 'voice' in triggers and triggers['voice']:
+            self.add_trigger('voice', lambda b, u: self.on_trigger(b, u.message))
 
         replies = config['replies']
         for action in replies:
             if action == 'messages':
-                self.actions.append(MessageAction(replies[action], self.regex))
+                self.actions.append(MessageAction(replies[action], triggers['message'] if 'message' in triggers else []))
             elif action == 'stickers':
                 self.actions.append(StickerAction(replies[action], self.bot.updater.bot))
             elif action == 'flickr_images':
@@ -68,19 +97,28 @@ class CurryBotMessageHandler (object):
             else:
                 print('Unrecognized reply type \'%s\'' % action)
 
+    def add_trigger(self, type, handler):
+        if type in self.triggers:
+            self.triggers[type].append(handler)
+        else:
+            self.triggers[type] = [handler]
 
-    def on_receive_message(self, bot, update):
+    def on_receive_message(self, bot, update, regexes):
         '''
         Called when a message is received by the bot.
         When this message matches this handler, trigger the actions.
         '''
-        try:
-            message = update.message
-            if re.match(self.regex, message.text):
+        message = update.message
+        for regex in regexes:
+            if re.match(regex, message.text):
                 self.on_trigger(bot, message)
-        except Exception as e:
-            print('Error in \'on_receive_message\':')
-            print(e)
+                return
+
+    def not_implemented(self, bot, update):
+        print('Action not implemented for:')
+        print(update.message)
+
+        bot.send_message(chat_id=update.message.chat.id, text='I\'m not sure how to reply to this')
 
     def on_receive_command(self, bot, update):
         '''

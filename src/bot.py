@@ -9,23 +9,44 @@ class CurryBot (object):
         '''
         self.updater = Updater(token)
         self.dispatcher = self.updater.dispatcher
+
         self.dispatcher.add_handler(MessageHandler(Filters.text,
-                                    (lambda bot, update, self=self: self.on_receive_message(bot, update))))
+                                    (lambda bot, update, self=self: self.on_receive(bot, update, 'text'))))
+        self.dispatcher.add_handler(MessageHandler(Filters.audio,
+                                    (lambda bot, update, self=self: self.on_receive(bot, update, 'audio'))))
+        self.dispatcher.add_handler(MessageHandler(Filters.contact,
+                                    (lambda bot, update, self=self: self.on_receive(bot, update, 'contact'))))
+        self.dispatcher.add_handler(MessageHandler(Filters.document,
+                                    (lambda bot, update, self=self: self.on_receive(bot, update, 'document'))))
+        self.dispatcher.add_handler(MessageHandler(Filters.photo,
+                                    (lambda bot, update, self=self: self.on_receive(bot, update, 'image'))))
+        self.dispatcher.add_handler(MessageHandler(Filters.sticker,
+                                    (lambda bot, update, self=self: self.on_receive(bot, update, 'sticker'))))
+        self.dispatcher.add_handler(MessageHandler(Filters.video,
+                                    (lambda bot, update, self=self: self.on_receive(bot, update, 'video'))))
+        self.dispatcher.add_handler(MessageHandler(Filters.voice,
+                                    (lambda bot, update, self=self: self.on_receive(bot, update, 'voice'))))
         self.dispatcher.add_handler(CommandHandler('info',
-                                       (lambda bot, update, self=self: self.on_info_command(bot, update))))
+                                    (lambda bot, update, self=self: self.on_info_command(bot, update))))
 
         self.handlers = {}
         self.keys = {}
 
-    def on_receive_message(self, bot, update):
+    def on_receive(self, bot, update, message_type):
         '''
         Global message handler.
         Forwards the messages to the other handlers if applicable.
         '''
-        for action in self.handlers:
-            handler = self.handlers[action]
-            if handler.regex:
-                handler.on_receive_message(bot, update)
+        try:
+            for action in self.handlers:
+                handler = self.handlers[action]
+                if message_type in handler.triggers:
+                    actionHandlers = handler.triggers[message_type]
+                    for actionHandler in actionHandlers:
+                        actionHandler(bot, update)
+        except Exception as e:
+            print('Error in \'on_receive_message\':')
+            print(e)
 
     def start(self):
         '''

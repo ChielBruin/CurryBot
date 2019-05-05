@@ -9,13 +9,13 @@ class MessageAction (Action):
     These messages can use matched groups from the original message.
     '''
 
-    def __init__(self, config, regex):
+    def __init__(self, config, regexes):
         '''
         Load all the messages from the given config
         '''
         super(MessageAction, self).__init__()
 
-        self.regex = regex
+        self.regexes = regexes
 
         messages = map(lambda x: (hashlib.md5(x.encode()).hexdigest(), x), config)
         for (msg_id, msg_text) in messages:
@@ -28,11 +28,12 @@ class MessageAction (Action):
         Given the original message and the reply text pattern,
         try filling in the holes in the reply pattern.
         '''
-        if self.regex and '\\' in reply_text:
-            try:
-                return re.sub(self.regex, reply_text, message_text)
-            except Exception:
-                pass
+        if '\\' in reply_text:
+            for regex in self.regexes:
+                try:
+                    return re.sub(regex, reply_text, message_text)
+                except Exception:
+                    continue
         return reply_text
 
     def trigger(self, bot, message, exclude=[], reply=None):
