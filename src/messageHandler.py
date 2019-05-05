@@ -122,12 +122,11 @@ class CurryBotMessageHandler (object):
         if self.accuracy < random.random():
             return
 
-
         exclude = []
         for i in range(self.amount):
             action = self.select_action()
             try:
-                target = self.replyBehaviour.selectTarget(message, i)
+                target = self.replyBehaviour.select_target(message, i)
                 exclude.append(action.trigger(bot, message, exclude=exclude, reply=target))
             except IndexError:
                 pass
