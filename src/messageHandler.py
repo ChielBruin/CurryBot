@@ -1,6 +1,8 @@
 from telegram.ext import CommandHandler, Filters
 import re, random
 
+from replyBehaviour import ReplyBehaviour
+
 from stickerAction import StickerAction
 from flickrAction  import FlickrAction
 from messageAction import MessageAction
@@ -23,8 +25,7 @@ class CurryBotMessageHandler (object):
         Registers the correct actions and commands.
         '''
         self.amount = int(config['amount'])
-        self.transitiveReply = config['transitiveReply']
-        self.reply_to = config['replyTo']
+        self.replyBehaviour = ReplyBehaviour(config['replyBehaviour'])
         self.actions = []
 
         if 'chats' in config:
@@ -118,19 +119,15 @@ class CurryBotMessageHandler (object):
         if (self.groups_include and (chat_id not in self.groups_include)) or (chat_id in self.groups_exclude):
             return
 
-        if self.reply_to == "replies" and not message.reply_to_message:
-            return
-        elif self.reply_to == "messages" and message.reply_to_message:
-            return
-
         if self.accuracy < random.random():
             return
 
-        target = message.message_id
-        if self.transitiveReply and message.reply_to_message:
-            target = message.reply_to_message.message_id
 
         exclude = []
         for i in range(self.amount):
             action = self.select_action()
-            exclude.append(action.trigger(bot, message, exclude=exclude, reply=target if i is 0 else None))
+            try:
+                target = self.replyBehaviour.selectTarget(message, i)
+                exclude.append(action.trigger(bot, message, exclude=exclude, reply=target))
+            except IndexError:
+                pass
