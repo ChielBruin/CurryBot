@@ -109,6 +109,9 @@ class CurryBotMessageHandler (object):
                 print('Unrecognized reply type \'%s\'' % action)
 
     def add_trigger(self, type, handler):
+        '''
+        Add a trigger of the given type to the list of triggers.
+        '''
         if type in self.triggers:
             self.triggers[type].append(handler)
         else:
