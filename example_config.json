@@ -8,8 +8,10 @@
         },
         "amount" : 5,
         "chats": {"include": [310311697]},
-        "transitiveReply": true,
-        "replyTo": "both"
+        "replyBehaviour": {
+            "message": "reply -> send*",
+            "reply": "transitiveReply -> send*",
+        },
     },
 
     "Hmmm": {
@@ -19,8 +21,10 @@
             "forward": [{"chat_id": "<chat_id>", "message_id": "<msg_id>"}]
         },
         "amount" : 1,
-        "transitiveReply": true,
-        "replyTo": "both"
+        "replyBehaviour": {
+            "message": "reply -> send*",
+            "reply": "transitiveReply -> send*",
+        },
     },
 
     "Haskell": {
@@ -30,7 +34,9 @@
         },
         "amount" : 1,
         "accuracy": "50%",
-        "transitiveReply": false,
-        "replyTo": "both"
+        "replyBehaviour": {
+            "message": "reply -> send*",
+            "reply": "transitiveReply -> send*",
+        },
     },
 }

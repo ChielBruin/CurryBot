@@ -24,8 +24,10 @@ Note that if you want the bot to reply to messages matching a given regex, 'priv
         },
         "amount" : 1,
         "accuracy": 0.9,
-        "transitiveReply": true,
-        "replyTo": "all"
+        "replyBehaviour": {
+            "message": "reply -> send*",
+            "reply": "transitiveReply -> send*",
+        },
     },
 }
 ```
@@ -53,8 +55,11 @@ Note that if you want the bot to reply to messages matching a given regex, 'priv
   - `chats`*: Whitelist or blacklist certain chats
     - `include`*: List of chat_ids to whitelist
     - `exclude`*: List of chat_ids to blacklist
-  - `transitiveReply`: Whether replying with a trigger will reply to the original message (`true`), or the reply that triggered the action (`false`)
-  - `replyTo`: Specify what type of messages should trigger this action. Can be either `replies` (only replies), `messages` (only non-reply messages) or `all`
+  - `replyBehaviour`: The behaviour for replying to given message types. The behaviour is a list of actions separated by `->`, where valid actions are `reply`, `transitiveReply`, `send` and `none`.
+    - `message`: Rule used for normal messages
+    - `reply`: Rule used for replies
+    - `forward`: Rule used for forwarded messages
+
 
 *) Optional
 
