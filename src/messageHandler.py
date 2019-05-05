@@ -45,7 +45,13 @@ class CurryBotMessageHandler (object):
         else:
             self.accuracy = 1
 
+        self.update_triggers(config)
+        self.update_actions(config)
 
+    def update_triggers(self, config):
+        """
+        Update the trigger configs.
+        """
         self.triggers = {}
         if 'triggers' not in config or config['triggers'] is {}:
             raise Exception('Malformed config, \'triggers\' could not be found')
@@ -84,6 +90,10 @@ class CurryBotMessageHandler (object):
         if 'voice' in triggers and triggers['voice']:
             self.add_trigger('voice', lambda b, u: self.on_trigger(b, u.message))
 
+    def update_actions(self, config):
+        """
+        Update the settings for the action handlers.
+        """
         replies = config['replies']
         for action in replies:
             if action == 'messages':
@@ -113,12 +123,6 @@ class CurryBotMessageHandler (object):
             if re.match(regex, message.text):
                 self.on_trigger(bot, message)
                 return
-
-    def not_implemented(self, bot, update):
-        print('Action not implemented for:')
-        print(update.message)
-
-        bot.send_message(chat_id=update.message.chat.id, text='I\'m not sure how to reply to this')
 
     def on_receive_command(self, bot, update):
         '''
