@@ -1,7 +1,10 @@
 from telegram.ext import CommandHandler, Filters
+from telegram import Message, Chat
+
 import re, random
 
 from replyBehaviour import ReplyBehaviour
+from timedTrigger import TimedTrigger
 
 from stickerAction import StickerAction
 from flickrAction  import FlickrAction
@@ -61,6 +64,16 @@ class CurryBotMessageHandler (object):
             for command in triggers['command']:
                 self.bot.dispatcher.add_handler(CommandHandler(command,
                                                 (lambda bot, update, self=self: self.on_receive_command(bot, update))))
+        if 'when_time' in triggers:
+            if 'chats' in config and 'include' in config['chats']:
+                for time_filter in triggers['when_time']:
+                    TimedTrigger(self.bot.dispatcher.job_queue,
+                                 when=time_filter,
+                                 groups=config['chats']['include'],
+                                 handler=self)
+            else:
+                print('\'when_time\' requires whitelisted groups')
+
         if 'message' in triggers:
             self.add_trigger('text',
                                 lambda b, u: self.on_receive_message(b, u, triggers['message']))
@@ -116,6 +129,10 @@ class CurryBotMessageHandler (object):
             self.triggers[type].append(handler)
         else:
             self.triggers[type] = [handler]
+
+    def on_receive_anonymous(self, bot, chat_id, datetime):
+        msg = Message(-1, None, datetime, Chat(chat_id, 'Dummy'))
+        self.on_trigger(bot, msg)
 
     def on_receive_message(self, bot, update, regexes):
         '''

@@ -86,8 +86,7 @@ class CurryBot (object):
         '''
         try:
             message = update.message
-            bot.forward_message(message.chat.id, from_chat_id=310311697, message_id=1515)
-
+            
             print('\nInfo command used:')
             print('\tChat_id: %d' % message.chat.id)
             if message.reply_to_message:
