@@ -2,6 +2,7 @@ from telegram.ext import CommandHandler, Filters
 from telegram import Message, Chat
 
 import re, random
+from datetime import datetime, timedelta
 
 from replyBehaviour import ReplyBehaviour
 from timedTrigger import TimedTrigger
@@ -74,6 +75,20 @@ class CurryBotMessageHandler (object):
             else:
                 print('\'when_time\' requires whitelisted groups')
 
+        if 'inactive_time' in triggers:
+            if 'chats' in config and 'include' in config['chats']:
+                time = triggers['inactive_time']
+                if 'h' in time or 'H' in time:
+                    delta = timedelta(hours=int(time[:-1]))
+                elif 'm' in time or 'M' in time:
+                    delta = timedelta(minutes=int(time[:-1]))
+                else:
+                    delta = timedelta(minutes=int(time))
+                self.add_trigger('tick',
+                                    lambda bot, chats, self=self: self.on_inactive_update(bot, chats, delta))
+            else:
+                print('\'inactive_time\' requires whitelisted groups')
+
         if 'message' in triggers:
             self.add_trigger('text',
                                 lambda b, u: self.on_receive_message(b, u, triggers['message']))
@@ -103,6 +118,17 @@ class CurryBotMessageHandler (object):
         if 'voice' in triggers and triggers['voice']:
             self.add_trigger('voice', lambda b, u: self.on_trigger(b, u.message))
 
+    def on_inactive_update(self, bot, chats, time_delta):
+        '''
+        Callback for the `tick` action.
+        If chats have been inactive for too long, triggers a reply action.
+        '''
+        for chat_id in self.groups_include:
+            if chat_id in chats and time_delta < chats[chat_id]:
+                    now = datetime.now()
+                    self.on_receive_anonymous(bot, chat_id, now)
+                    self.bot.active_timers[chat_id] = now - timedelta(seconds=2)
+
     def update_actions(self, config):
         '''
         Update the settings for the action handlers.
@@ -131,6 +157,9 @@ class CurryBotMessageHandler (object):
             self.triggers[type] = [handler]
 
     def on_receive_anonymous(self, bot, chat_id, datetime):
+        '''
+        Calls trigger with a dummy message.
+        '''
         msg = Message(-1, None, datetime, Chat(chat_id, 'Dummy'))
         self.on_trigger(bot, msg)
 

@@ -1,5 +1,7 @@
 from telegram.ext import Updater, MessageHandler, CommandHandler, Filters
 
+from datetime import datetime, timedelta
+
 from messageHandler import CurryBotMessageHandler
 
 class CurryBot (object):
@@ -9,6 +11,7 @@ class CurryBot (object):
         '''
         self.updater = Updater(token)
         self.dispatcher = self.updater.dispatcher
+        self.active_timers = {}
 
         self.dispatcher.add_handler(MessageHandler(Filters.text,
                                     (lambda bot, update, self=self: self.on_receive(bot, update, 'text'))))
@@ -38,6 +41,10 @@ class CurryBot (object):
         Forwards the messages to the other handlers if applicable.
         '''
         try:
+            if not message_type == 'tick':
+                chat_id = update.message.chat.id
+                self.active_timers[chat_id] = datetime.now()
+
             for action in self.handlers:
                 handler = self.handlers[action]
                 if message_type in handler.triggers:
@@ -48,12 +55,27 @@ class CurryBot (object):
             print('Error in \'on_receive_message\':')
             print(e)
 
+    def tick(self, bot, job):
+        '''
+        Propagate the tick action to all the registered handlers.
+        '''
+        now = datetime.now()
+        deltas = {}
+        for chat_id in self.active_timers:
+            deltas[str(chat_id)] = now - self.active_timers[chat_id]
+        self.on_receive(bot, deltas, 'tick')
+
     def start(self):
         '''
         Start the bot.
         '''
         self.updater.start_polling()
         print('CurryBot started')
+
+        # Set up the tick trigger
+        self.dispatcher.job_queue.run_repeating(self.tick,
+                timedelta(minutes=1), first=timedelta(seconds= 60 - datetime.now().second))
+
         self.updater.idle()
 
     def config_action(self, action_name, action_config):
@@ -86,7 +108,7 @@ class CurryBot (object):
         '''
         try:
             message = update.message
-            
+
             print('\nInfo command used:')
             print('\tChat_id: %d' % message.chat.id)
             if message.reply_to_message:
