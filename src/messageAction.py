@@ -29,11 +29,14 @@ class MessageAction (Action):
         try filling in the holes in the reply pattern.
         '''
         if '\\' in reply_text:
-            for regex in self.regexes:
-                try:
-                    return re.sub(regex, reply_text, message_text)
-                except Exception:
-                    continue
+            if len(self.regexes) > 0:
+                for regex in self.regexes:
+                    try:
+                        return re.sub(regex, reply_text, message_text)
+                    except Exception:
+                        continue
+            elif '\\$' in reply_text:
+                return reply_text.replace('\\$', message_text)
         return reply_text
 
     def trigger(self, bot, message, exclude=[], reply=None):

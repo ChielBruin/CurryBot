@@ -156,11 +156,11 @@ class CurryBotMessageHandler (object):
         else:
             self.triggers[type] = [handler]
 
-    def on_receive_anonymous(self, bot, chat_id, datetime):
+    def on_receive_anonymous(self, bot, chat_id, datetime, msg_text=''):
         '''
         Calls trigger with a dummy message.
         '''
-        msg = Message(-1, None, datetime, Chat(chat_id, 'Dummy'))
+        msg = Message(-1, None, datetime, Chat(chat_id, 'Dummy'), text=msg_text)
         self.on_trigger(bot, msg)
 
     def on_receive_message(self, bot, update, regexes):

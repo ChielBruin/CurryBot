@@ -13,8 +13,10 @@ class TimedTrigger (object):
 
     def on_trigger(self, bot, job):
         self.schedule_next()
+        text = self.when['param'] if 'param' in self.when else ''
+        
         for chat_id in self.chats:
-            self.handler.on_receive_anonymous(bot, chat_id, datetime.now())
+            self.handler.on_receive_anonymous(bot, chat_id, datetime.now(), msg_text=text)
 
     def schedule_next(self):
         next_time = self.next_valid_time()
