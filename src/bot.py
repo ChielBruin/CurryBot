@@ -42,7 +42,7 @@ class CurryBot (object):
         '''
         try:
             if not message_type == 'tick':
-                chat_id = update.message.chat.id
+                chat_id = str(update.message.chat.id)
                 self.active_timers[chat_id] = datetime.now()
 
             for action in self.handlers:
@@ -62,7 +62,8 @@ class CurryBot (object):
         now = datetime.now()
         deltas = {}
         for chat_id in self.active_timers:
-            deltas[str(chat_id)] = now - self.active_timers[chat_id]
+            chat_id = str(chat_id)
+            deltas[chat_id] = now - self.active_timers[chat_id]
         self.on_receive(bot, deltas, 'tick')
 
     def start(self):

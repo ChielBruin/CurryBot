@@ -127,7 +127,7 @@ class CurryBotMessageHandler (object):
             if chat_id in chats and time_delta < chats[chat_id]:
                     now = datetime.now()
                     self.on_receive_anonymous(bot, chat_id, now)
-                    self.bot.active_timers[chat_id] = now - timedelta(seconds=2)
+                    self.bot.active_timers[str(chat_id)] = now - timedelta(seconds=2)
 
     def update_actions(self, config):
         '''
