@@ -13,7 +13,7 @@ class MessageAction (Action):
         '''
         Load all the messages from the given config
         '''
-        super(MessageAction, self).__init__()
+        super(MessageAction, self).__init__(config)
 
         self.regexes = regexes
 

@@ -5,9 +5,10 @@ class Action (object):
     '''
     Base class of Actions.
     '''
-    def __init__(self):
+    def __init__(self, config):
         self.ids = []
         self.vals = {}
+        self.weight = config['weight'] if 'weight' in config else None
 
     def append_ids(self, ids, include=None, exclude=None, load_action=None):
         '''
@@ -61,4 +62,7 @@ class Action (object):
         '''
         Returns the amount of ids in this action
         '''
-        return len(self.ids)
+        if self.weight:
+            return self.weight
+        else:
+            return len(self.ids)

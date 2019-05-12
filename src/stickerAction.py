@@ -10,7 +10,7 @@ class StickerAction (Action):
         '''
         Configure this action by loading all the stickers from the packs.
         '''
-        super(StickerAction, self).__init__()
+        super(StickerAction, self).__init__(config)
 
         for pack in config:
             stickerpack = bot.get_sticker_set(pack['pack'])

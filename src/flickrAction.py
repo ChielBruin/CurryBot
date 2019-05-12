@@ -11,7 +11,7 @@ class FlickrAction (Action):
         '''
         Initialize a FlickrAction by preloading the images in the given albums.
         '''
-        super(FlickrAction, self).__init__()
+        super(FlickrAction, self).__init__(config)
         self.key = api_key
 
         for pack in config:

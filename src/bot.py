@@ -52,7 +52,7 @@ class CurryBot (object):
                     for actionHandler in actionHandlers:
                         actionHandler(bot, update)
         except Exception as e:
-            print('Error in \'on_receive_message\':')
+            print('Error in \'on_receive\':')
             print(e)
 
     def tick(self, bot, job):

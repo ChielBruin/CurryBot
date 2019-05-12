@@ -12,7 +12,7 @@ class ForwardAction (Action):
         '''
         Load all the messages from the given config
         '''
-        super(ForwardAction, self).__init__()
+        super(ForwardAction, self).__init__(config)
 
         for msg in config:
             chat_id = msg['chat_id']
