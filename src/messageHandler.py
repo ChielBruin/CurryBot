@@ -62,8 +62,8 @@ class CurryBotMessageHandler (object):
             raise Exception('Malformed config, \'triggers\' could not be found')
 
         triggers = config['triggers']
-        if 'command' in triggers:
-            for command in triggers['command']:
+        if 'commands' in triggers:
+            for command in triggers['commands']:
                 self.bot.dispatcher.add_handler(CommandHandler(command,
                                                 (lambda bot, update, self=self: self.on_receive_command(bot, update))))
         if 'when_time' in triggers:

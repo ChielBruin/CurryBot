@@ -35,7 +35,6 @@ class RSSAction (Action):
             msg.append(link)
 
         msg = '\n'.join(msg)
-        print(msg)
         if reply:
             bot.send_message(chat_id=chat_id, text=msg, reply_to_message_id=reply)
         else:
