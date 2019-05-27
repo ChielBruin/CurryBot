@@ -13,6 +13,8 @@ from messageAction import MessageAction
 from forwardAction import ForwardAction
 from rssAction     import RSSAction
 
+from ytPlaylistAppend import YtPlaylistAppend
+
 
 class CurryBotMessageHandler (object):
     '''
@@ -51,7 +53,18 @@ class CurryBotMessageHandler (object):
             self.accuracy = 1
 
         self.update_triggers(config)
+        self.update_side_effects(config)
         self.update_actions(config)
+
+    def update_side_effects(self, config):
+        '''
+        Update the configs for the side effects.
+        '''
+        self.side_effects = []
+        if 'side-effects' in config:
+            effects = config['side-effects']
+            if 'ytPlaylistAppend' in effects:
+                self.side_effects.append(YtPlaylistAppend(effects['ytPlaylistAppend'], self.bot.get_api_key('youtube')))
 
     def update_triggers(self, config):
         '''
@@ -216,6 +229,13 @@ class CurryBotMessageHandler (object):
 
         if self.accuracy < random.random():
             return
+
+        try:
+            for effect in self.side_effects:
+                effect.trigger(message)
+        except Exception as e:
+            print('An exception occured in one of the side effect handlers')
+            print(e)
 
         exclude = []
         for i in range(self.amount):
