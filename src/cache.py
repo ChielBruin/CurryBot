@@ -54,7 +54,7 @@ class Cache(object):
     def handler_get_cache(cls, id, key):
         if id not in cls.handler_cache:
             return None
-        return cls.handler_cache[id]
+        cache = cls.handler_cache[id]
         if key in cache:
             return cache[key]
         else:
@@ -87,7 +87,7 @@ class Cache(object):
 
         cached = cls.shared_get_cache(key)
         if cached:
-            hex_bytes = cls._remove_padding(cls.credentials_cipher.decrypt(bytes.fromhex(cache)))
+            hex_bytes = cls._remove_padding(cls.credentials_cipher.decrypt(bytes.fromhex(cached)))
             return hex_bytes
         else:
             return None

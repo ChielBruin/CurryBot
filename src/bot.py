@@ -26,10 +26,6 @@ class CurryBot (object):
 
         self.dispatcher.add_handler(TelegramMessageHandler(Filters.all,
                                     (lambda bot, update, self=self: self.on_receive(bot, update))))
-        self.dispatcher.add_handler(CommandHandler('info',
-                                    (lambda bot, update, self=self: self.on_info_command(bot, update))))
-        self.dispatcher.add_handler(CommandHandler('update',
-                                    (lambda bot, update, self=self: self.on_update_command(bot, update))))
 
     def register_message_handler(self, handler):
         self._message_handlers.append(handler)
