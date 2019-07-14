@@ -17,6 +17,7 @@ class YtPlaylistAppendAction (Action):
         self.index = index
         self.playlist = playlist
         self.youtube = self.authorize(api_key)
+        self.update()
 
     def encode_credentials(self, obj):
         if isinstance(obj, datetime.datetime):
@@ -26,7 +27,7 @@ class YtPlaylistAppendAction (Action):
     def authorize(self, secret_file):
         Logger.log('DEBUG', 'Authorizing youtube API')
         try:
-            c_json = Cache.credentials_get_cache(self.id)
+            c_json = Cache.shared_get_cache_encrypted(self.id)
             api_service_name = "youtube"
             api_version = "v3"
 
@@ -47,8 +48,6 @@ class YtPlaylistAppendAction (Action):
                                 client_secret=c_dict['_client_secret'],
                                 scopes=c_dict['_scopes'])
                 credentials.expiry = datetime.datetime.fromtimestamp(c_dict['expiry'])
-
-            Cache.credentials_put_cache(self.id, json.dumps(credentials.__dict__, default=self.encode_credentials))
 
             youtube = googleapiclient.discovery.build(
                 api_service_name, api_version, credentials=credentials)
@@ -73,6 +72,12 @@ class YtPlaylistAppendAction (Action):
         }
         )
         response = request.execute()
+
+    def update(self):
+        print(self.youtube.__dict__)
+        credentials = self.youtube.credentials
+        credentials_json = json.dumps(credentials.__dict__, default=self.encode_credentials)
+        Cache.shared_put_cache_encrypted(self.id, credentials_json)
 
     def dispatch(self, bot, msg, exclude):
         self._playlist_add(msg.text)
