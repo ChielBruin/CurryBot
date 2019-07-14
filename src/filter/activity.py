@@ -1,34 +1,41 @@
 from filter.filter import Filter
+from cache import Cache
 
-class AbstractActivityFilter(Filter):
-    # TODO: Move this to the cache, such that ActivityActions can access it
-    activity = {}
-    def __init__(self, id):
-        super(AbstractActivityFilter, self).__init__(id)
 
-    def get_last_activity(self, chat_id):
-        if chat_id in self.activity:
-            return self.activity[chat_id]
-        else:
-            return None
+class AbstractNoActivityFilter (Filter):
+    def __init__(self, id, timedelta, cache_key, reset):
+        super(AbstractNoActivityFilter, self).__init__(id)
+        self.timedelta = timedelta
+        self.cache_key = cache_key
+        self.reset = reset
 
-    def set_last_activity(self, chat_id, datetime):
-        self.activity[chat_id] = datetime
+    def _filter(self, message, id, key):
+        time = message.date
 
-class InactiveFilter (AbstractActivityFilter):
-    def __init__(self, id, minute=None, hour=None, day=None, month=None, year=None):
-        super(TimeFilter, self).__init__(id)
-        self.timedelta = None
+        cached = Cache.shared_get_cache(self.cache_key)
+        if key in cached:
+            cached_type = cached[key]
+            if id in cached_type:
+                last_activity = cached_type[id]
+                if (last_activity + self.timedelta) <= time:
+                    if self.reset:
+                        cached_type[id] = message.date
+                        cached = Cache.shared_put_cache(self.cache_key, cached)
+                    return message
+        return None
+
+
+class ChatNoActivityFilter (AbstractNoActivityFilter):
+    def __init__(self, id, timedelta, cache_key, reset=True):
+        super(ChatNoActivityFilter, self).__init__(id, timedelta, cache_key, reset)
 
     def filter(self, message):
-        time = message.date
-        chat_id = message.chat.id
+        return self._filter(message, message.chat.id, 'chat')
 
-        now_time = datetime.datetime.now()
-        last_activity = self.get_last_activity(chat_id)
 
-        if last_activity and (last_activity + self.time_delta) <= time:
-            self.set_last_activity(chat_id, time)
-            return message
-        else:
-            return None
+class UserNoActivityFilter (AbstractNoActivityFilter):
+    def __init__(self, id, timedelta, cache_key, reset=True):
+        super(UserNoActivityFilter, self).__init__(id, timedelta, cache_key, reset)
+
+    def filter(self, message):
+        return self._filter(message, message.from_user.id, 'user')

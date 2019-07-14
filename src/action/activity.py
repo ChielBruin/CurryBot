@@ -1,40 +1,39 @@
 from action.action import Action
 from cache import Cache
-from logger import Logger
 
-import requests
 
-class MonitorUserActivityAction (Action):
-    def __init__(self, id):
-        super(MonitorUserActivityAction, self).__init__(id)
+class AbstractMonitorActivityAction (Action):
+    def __init__(self, id, cache_key):
+        super(AbstractMonitorActivityAction, self).__init__(id)
+        self.cache_key = cache_key
         self.update()
 
     def update(self):
-        Logger.log_debug('Updating cache of %s' % self.id)
-        # TODO
+        if not Cache.shared_get_cache(self.cache_key):
+            Cache.shared_put_cache(self.cache_key, {'chat': {}, 'user': {} })
+
+    def _log_activity(self, message):
+        raise Exception('Not implemented')
+
+    def log_activity(self, key, id, time):
+        cache = Cache.shared_get_cache(self.cache_key)
+        cache[key][id] = time
+        Cache.shared_put_cache(self.cache_key, cache)
 
     def dispatch(self, bot, msg, exclude):
-        # TODO
+        self._log_activity(msg)
         return []
 
     def dispatch_reply(self, bot, msg, reply_to, exclude):
-        # TODO
+        self._log_activity(msg)
         return []
 
 
-class MonitorChatActivityAction (Action):
-    def __init__(self, id):
-        super(MonitorChatActivityAction, self).__init__(id)
-        self.update()
+class MonitorChatActivityAction (AbstractMonitorActivityAction):
+    def _log_activity(self, message):
+        self.log_activity('chat', message.chat.id, message.date)
 
-    def update(self):
-        Logger.log_debug('Updating cache of %s' % self.id)
-        # TODO
 
-    def dispatch(self, bot, msg, exclude):
-        # TODO
-        return []
-
-    def dispatch_reply(self, bot, msg, reply_to, exclude):
-        # TODO
-        return []
+class MonitorUserActivityAction (AbstractMonitorActivityAction):
+    def _log_activity(self, message):
+        self.log_activity('user', message.from_user.id, message.date)
