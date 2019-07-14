@@ -43,14 +43,14 @@ class UpdateAction (Action):
         super(UpdateAction, self).__init__(id)
         self.bot = bot
 
-    def update(self):
+    def do_update(self):
         Logger.log_info('Update command used')
         self.bot.update_cache()
 
     def dispatch(self, bot, msg, exclude):
-        self.update()
+        self.do_update()
         return []
 
     def dispatch_reply(self, bot, msg, reply_to, exclude):
-        self.update()
+        self.do_update()
         return []
