@@ -45,13 +45,13 @@ class Logger(object):
 
     @classmethod
     def _log(cls, level, msg, details):
-        level_str = cls._get_level_string(level)
+        (level_str, level_color) = cls._get_level_string(level)
         for chat_id in cls._log_handlers:
-            if cls._log_handlers[chat_id] >= level:
+            if level < cls._log_handlers[chat_id]:
                 continue
 
             if chat_id == 'console':
-                line = '[%s]\t- %s' % (level_str, msg)
+                line = '[%s%s\033[0m]\t- %s' % ('\033[%dm' % level_color, level_str, msg)
                 print(line)
             else:
                 line = '*[%s]*\t- %s' % (level_str, msg.replace('_', '\\_'))
@@ -63,15 +63,15 @@ class Logger(object):
     @classmethod
     def _get_level_string(cls, level):
         if level is 0:
-            return 'TRACE'
+            return ('TRACE', 39)
         elif level is 1:
-            return 'DEBUG'
+            return ('DEBUG', 96)
         elif level is 2:
-            return 'INFO'
+            return ('INFO', 92)
         elif level is 3:
-            return 'WARNING'
+            return ('WARNING', 93)
         elif level is 4:
-            return 'ERROR'
+            return ('ERROR', 31)
         else:
             cls.log_error('Undefined level log %d' % level)
-            return 'UNDEFINED (%d)' % level
+            return ('UNDEFINED (%d)' % level, '')
