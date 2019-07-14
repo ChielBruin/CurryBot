@@ -36,7 +36,7 @@ class Action (object):
                 continue
 
             if cache:
-                val = Cache.action_get_cache(self.id, id)
+                val = Cache.handler_get_cache(self.id, id)
                 if val is None:
                     Logger.log_debug('id \'%s\' not found in the cache' % id)
             else:
@@ -47,7 +47,7 @@ class Action (object):
 
             self._options["%s_%s" % (self.id, id)] = val
             if cache:
-                Cache.action_put_cache(self.id, id, val)
+                Cache.handler_put_cache(self.id, id, val)
 
     def append_ids(self, vals, include=None, exclude=None, cache=False):
         '''

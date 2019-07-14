@@ -21,7 +21,7 @@ class Logger(object):
     @classmethod
     def log_exception(cls, ex, msg):
         text = (msg + '\n' if msg else '') + str(type(ex).__name__) + ': ' + str(ex)
-        cls._log(level, text, None)
+        cls.log_error(text)
 
     @classmethod
     def log_trace(cls, msg, details=None):

@@ -16,7 +16,7 @@ class YtPlaylistAppendAction (Action):
         super(YtPlaylistAppendAction, self).__init__(id)
         self.index = index
         self.playlist = playlist
-        self.youtube = self.authorize(api_key)
+        (self.credentials, self.youtube) = self.authorize(api_key)
         self.update()
 
     def encode_credentials(self, obj):
@@ -51,7 +51,7 @@ class YtPlaylistAppendAction (Action):
 
             youtube = googleapiclient.discovery.build(
                 api_service_name, api_version, credentials=credentials)
-            return youtube
+            return (credentials, youtube)
 
         except Exception as ex:
             Logger.log_exception(ex, msg='Error while authorizing Youtube API')
@@ -74,9 +74,7 @@ class YtPlaylistAppendAction (Action):
         response = request.execute()
 
     def update(self):
-        print(self.youtube.__dict__)
-        credentials = self.youtube.credentials
-        credentials_json = json.dumps(credentials.__dict__, default=self.encode_credentials)
+        credentials_json = json.dumps(self.credentials.__dict__, default=self.encode_credentials)
         Cache.shared_put_cache_encrypted(self.id, credentials_json)
 
     def dispatch(self, bot, msg, exclude):
