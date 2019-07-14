@@ -21,6 +21,7 @@ class ConfigLoader (object):
         pass
 
     def apply_config(self, bot):
+        Logger.init(bot, {})
         bot.set_token('TELEGRAM-API-TOKEN')
         telegram_bot = bot.updater.bot
         Cache.set_cache_location('/path/to/cache')
