@@ -10,7 +10,7 @@ class MonitorUserActivityAction (Action):
         self.update()
 
     def update(self):
-        Logger.log('DEBUG', 'Updating cache of %s' % self.id)
+        Logger.log_debug('Updating cache of %s' % self.id)
         # TODO
 
     def dispatch(self, bot, msg, exclude):
@@ -28,7 +28,7 @@ class MonitorChatActivityAction (Action):
         self.update()
 
     def update(self):
-        Logger.log('DEBUG', 'Updating cache of %s' % self.id)
+        Logger.log_debug('Updating cache of %s' % self.id)
         # TODO
 
     def dispatch(self, bot, msg, exclude):

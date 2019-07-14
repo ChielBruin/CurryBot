@@ -15,7 +15,7 @@ class MessageHandler (object):
             self.filter.update()
             self.action.update()
         except Exception as ex:
-            Logger.log_exception('ERROR', ex, msg='Exception while updating the cache of %s' % self.name)
+            Logger.log_exception(ex, msg='Exception while updating the cache of %s' % self.name)
 
     def call(self, bot, message):
         try:
@@ -24,7 +24,7 @@ class MessageHandler (object):
                 return
 
             if msg.chat.id is None:
-                Logger.log('ERROR', 'No chat ID specified in rule %s' % self.name)
+                Logger.log_error('No chat ID specified in rule %s' % self.name)
                 return
 
             selected = []
@@ -37,7 +37,7 @@ class MessageHandler (object):
                         reply_ids = self.action.dispatch(bot, msg, exclude=selected)
                     selected.extend(reply_ids)
         except Exception as ex:
-            Logger.log_exception('ERROR', ex, msg=self.name)
+            Logger.log_exception(ex, msg=self.name)
 
 
 class TickHandler (MessageHandler):

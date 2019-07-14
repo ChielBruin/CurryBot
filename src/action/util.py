@@ -18,21 +18,21 @@ class InfoAction (Action):
         return []
 
     def analyze_message(self, message):
-        Logger.log('INFO', 'Info command used:')
-        Logger.log('INFO', 'Chat_id: %s' % str(message.chat.id))
+        Logger.log_info('Info command used:')
+        Logger.log_info('Chat_id: %s' % str(message.chat.id))
         if message.reply_to_message:
             message = message.reply_to_message
             if message.sticker:
                 sticker = message.sticker
-                Logger.log('DEBUG', 'Sticker_id: %s' % sticker.file_id)
-                Logger.log('DEBUG', 'Pack_id: %s' % sticker.set_name)
+                Logger.log_debug('Sticker_id: %s' % sticker.file_id)
+                Logger.log_debug('Pack_id: %s' % sticker.set_name)
                 return 'That is a sticker'
             elif message.forward_from:
-                Logger.log('DEBUG', 'Forwarded message')
-                Logger.log('DEBUG', 'Message_id: %d' % message.message_id)
+                Logger.log_debug('Forwarded message')
+                Logger.log_debug('Message_id: %d' % message.message_id)
                 return 'That is a forwarded message'
             else:
-                Logger.log('DEBUG', str(message))
+                Logger.log_debug(str(message))
                 return 'That is a message'
         else:
             return '`putStrLn "Hello, World!"``\nI reply to your messages when I feel the need to.'
@@ -43,10 +43,14 @@ class UpdateAction (Action):
         super(UpdateAction, self).__init__(id)
         self.bot = bot
 
-    def dispatch(self, bot, msg, exclude):
+    def update(self):
+        Logger.log_info('Update command used')
         self.bot.update_cache()
+
+    def dispatch(self, bot, msg, exclude):
+        self.update()
         return []
 
     def dispatch_reply(self, bot, msg, reply_to, exclude):
-        self.bot.update_cache()
+        self.update()
         return []

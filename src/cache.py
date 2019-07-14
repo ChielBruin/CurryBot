@@ -11,10 +11,11 @@ class Cache(object):
 
     @classmethod
     def set_cache_location(cls, loc):
+        Logger.log_trace('Cache location set to %s' % loc)
         if not os.path.exists(loc):
             os.makedirs(loc)
         if os.path.isfile(loc):
-            Logger.log('ERROR', 'The specified cache location must be a folder, not \'%\'' % loc)
+            Logger.log_error('The specified cache location must be a folder, not \'%\'' % loc)
             raise Exception()
         cls.cache_location = os.path.join(loc, 'bot_cache.json')
 
@@ -22,23 +23,24 @@ class Cache(object):
     def store_cache(cls):
         cache = {'handlers': cls.handler_cache, 'shared': cls.shared_cache}
         with open(cls.cache_location, 'w') as cache_file:
-            Logger.log('DEBUG', 'Writing cache to disk')
+            Logger.log_debug('Writing cache to disk')
             json.dump(cache, cache_file)
 
     @classmethod
     def load_cache(cls):
         if os.path.exists(cls.cache_location):
             with open(cls.cache_location, 'r') as cache_file:
-                Logger.log('DEBUG', 'Loading cache')
+                Logger.log_debug('Loading cache')
                 content = cache_file.read()
                 if content:
                     cache = json.loads(content)
                     if ('handlers' not in cache) or ('shared' not in cache):
-                        Logger.log('ERROR', 'Malformed cache, starting with a fresh cache')
+                        Logger.log_error('Malformed cache, starting with a fresh cache')
                     else:
                         cls.handler_cache = cache['handlers']
                         cls.shared_cache = cache['shared']
         else:
+            Logger.log_trace('Cache file does not exist (can be ignored on the initial run)')
             cls.handler_cache = {}
             cls.shared_cache = {}
 
@@ -60,12 +62,14 @@ class Cache(object):
 
     @classmethod
     def set_cipher_pwd(cls, key):
+        # Never log the key here
+        Logger.log_trace('Creating the cipher for cache encryption')
         cls.credentials_cipher = AES.new(key, AES.MODE_ECB)
 
     @classmethod
     def shared_put_cache_encrypted(cls, key, value):
         if not cls.credentials_cipher:
-            Logger.log('ERROR', 'No cipher key set for the cache')
+            Logger.log_error('No cipher key set for the cache')
             return
 
         encoded = cls.credentials_cipher.encrypt(cls._add_padding(value))
@@ -78,7 +82,7 @@ class Cache(object):
     @classmethod
     def shared_get_cache_encrypted(cls, key):
         if not cls.credentials_cipher:
-            Logger.log('ERROR', 'No cipher key set for the cache')
+            Logger.log_error('No cipher key set for the cache')
             return None
 
         cached = cls.shared_get_cache(key)

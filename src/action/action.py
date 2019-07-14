@@ -38,7 +38,7 @@ class Action (object):
             if cache:
                 val = Cache.action_get_cache(self.id, id)
                 if val is None:
-                    Logger.log('DEBUG', 'id \'%s\' not found in the cache' % id)
+                    Logger.log_debug('id \'%s\' not found in the cache' % id)
             else:
                 val = None
 

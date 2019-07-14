@@ -19,7 +19,7 @@ class SendBehaviour (object):
             elif action == 'none':
                 continue
             else:
-                Logger.log('ERROR', 'Undefined behaviour action \'%s\'' % action)
+                Logger.log_error('Undefined behaviour action \'%s\'' % action)
 
     def _select_behaviour(self, msg):
         if msg.forward_from:

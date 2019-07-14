@@ -23,7 +23,6 @@ class CurryBot (object):
         self.updater = Updater(token)
         self.dispatcher = self.updater.dispatcher
         self.bot = self.updater.bot
-        Logger.init(self.bot)
 
         self.dispatcher.add_handler(TelegramMessageHandler(Filters.all,
                                     (lambda bot, update, self=self: self.on_receive(bot, update))))
@@ -50,7 +49,7 @@ class CurryBot (object):
             for handler in self._message_handlers:
                     handler.call(bot, message)
         except Exception as ex:
-            Logger.log_exception('FATAL', ex, msg='This exception should never occur')
+            Logger.log_exception(msg='This exception should never occur')
 
     def on_receive_tick(self, bot, job):
         try:
@@ -58,10 +57,10 @@ class CurryBot (object):
             for handler in self._tick_handlers:
                     handler.call(bot, time)
         except Exception as ex:
-            Logger.log_exception('FATAL', ex, msg='This exception should never occur')
+            Logger.log_exception(ex, msg='This exception should never occur')
 
     def update_cache(self):
-        Logger.log('INFO', 'Updating cache')
+        Logger.log_info('Updating cache')
         for handler in self._message_handlers:
             handler.update()
         for handler in self._tick_handlers:
@@ -80,5 +79,5 @@ class CurryBot (object):
         self.dispatcher.job_queue.run_repeating(lambda b, j, self=self: self.update_cache(),
                 timedelta(days=1), first=timedelta(hours= 24 - datetime.now().hour))
 
-        Logger.log('INFO', 'CurryBot started')
+        Logger.log_info('CurryBot started')
         self.updater.idle()

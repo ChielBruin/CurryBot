@@ -22,7 +22,7 @@ class FlickrAction (Action):
         self.update()
 
     def update(self):
-        Logger.log('DEBUG', 'Updating cache of %s' % self.id)
+        Logger.log_debug('Updating cache of %s' % self.id)
         flickr_album = self.make_request('flickr.photosets.getPhotos', 'photoset', {'photoset_id': self.pack})
         name = flickr_album['title']
         images = list(map(lambda x: x['id'], flickr_album['photo']))
@@ -35,7 +35,7 @@ class FlickrAction (Action):
         '''
         Load an image from the given id.
         '''
-        Logger.log('DEBUG', 'Requesting image with id %s' % id)
+        Logger.log_debug('Requesting image with id %s' % id)
         try:
             photo = self.make_request('flickr.photos.getInfo', 'photo', {'photo_id': id})
             title = photo['title']['_content']

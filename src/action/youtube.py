@@ -25,7 +25,7 @@ class YtPlaylistAppendAction (Action):
         return json.JSONEncoder.default(self, obj)
 
     def authorize(self, secret_file):
-        Logger.log('DEBUG', 'Authorizing youtube API')
+        Logger.log_debug('Authorizing youtube API')
         try:
             c_json = Cache.shared_get_cache_encrypted(self.id)
             api_service_name = "youtube"
@@ -38,7 +38,7 @@ class YtPlaylistAppendAction (Action):
                     secret_file, scopes)
                 credentials = flow.run_console()
             else:
-                Logger.log('DEBUG', 'Using cached credentials')
+                Logger.log_debug('Using cached credentials')
                 c_dict = json.loads(c_json)
                 credentials = Credentials(
                                 token=c_dict['token'],
@@ -54,7 +54,7 @@ class YtPlaylistAppendAction (Action):
             return youtube
 
         except Exception as ex:
-            Logger.log_exception('ERROR', ex, msg='Error while authorizing Youtube API')
+            Logger.log_exception(ex, msg='Error while authorizing Youtube API')
 
 
     def _playlist_add(self, video_id):

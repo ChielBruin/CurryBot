@@ -55,5 +55,4 @@ class ForwardAction (Action):
         return [self.id]
 
     def dispatch_reply(self, bot, msg, reply_to, exclude):
-        Logger.log('ERROR', 'You cannot reply using a forwarded message')
-        return []
+        raise Exception('You cannot reply using a forwarded message')
