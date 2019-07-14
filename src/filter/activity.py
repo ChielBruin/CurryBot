@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from filter.filter import Filter
 from cache import Cache
 
@@ -16,10 +18,10 @@ class AbstractNoActivityFilter (Filter):
         if key in cached:
             cached_type = cached[key]
             if id in cached_type:
-                last_activity = cached_type[id]
+                last_activity = datetime.fromtimestamp(cached_type[id])
                 if (last_activity + self.timedelta) <= time:
                     if self.reset:
-                        cached_type[id] = message.date
+                        cached_type[id] = message.date.timestamp()
                         cached = Cache.shared_put_cache(self.cache_key, cached)
                     return message
         return None
