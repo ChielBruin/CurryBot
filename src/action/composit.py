@@ -56,14 +56,14 @@ class AndAction (Action):
         self._right.update()
 
     def dispatch(self, bot, msg, exclude):
-        r1 = self._left.dispatch(self, bot, msg, exclude)
-        r2 = self._right.dispatch(self, bot, msg, exclude)
+        r1 = self._left.dispatch(bot, msg, exclude)
+        r2 = self._right.dispatch(bot, msg, exclude)
         r1.extend(r2)
         return r1
 
     def dispatch_reply(self, bot, msg, reply_to, exclude):
-        r1 = self._left.dispatch_reply(self, bot, msg, reply_to, exclude)
-        r2 = self._right.dispatch_reply(self, bot, msg, reply_to, exclude)
+        r1 = self._left.dispatch_reply(bot, msg, reply_to, exclude)
+        r2 = self._right.dispatch_reply(bot, msg, reply_to, exclude)
         r1.extend(r2)
         return r1
 
@@ -80,12 +80,12 @@ class OrAction (Action):
 
     def dispatch(self, bot, msg, exclude):
         try:
-            return self._left.dispatch(self, bot, msg, exclude)
+            return self._left.dispatch(bot, msg, exclude)
         except:
-            return self._right.dispatch(self, bot, msg, exclude)
+            return self._right.dispatch(bot, msg, exclude)
 
     def dispatch_reply(self, bot, msg, reply_to, exclude):
         try:
-            return self._left.dispatch_reply(self, bot, msg, reply_to, exclude)
+            return self._left.dispatch_reply(bot, msg, reply_to, exclude)
         except:
-            return self._right.dispatch_reply(self, bot, msg, reply_to, exclude)
+            return self._right.dispatch_reply(bot, msg, reply_to, exclude)
