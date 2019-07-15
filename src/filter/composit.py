@@ -33,7 +33,7 @@ class AndFilter (Filter):
         self._filters = filters
 
     def update(self):
-        for filter in self._filter:
+        for filter in self._filters:
             filter.update()
 
     def filter(self, message):
@@ -50,7 +50,7 @@ class OrFilter (Filter):
         self._filters = filters
 
     def update(self):
-        for filter in self._filter:
+        for filter in self._filters:
             filter.update()
 
     def filter(self, message):
