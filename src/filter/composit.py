@@ -6,6 +6,15 @@ class NoFilter (Filter):
     def filter(self, message):
         return message
 
+class ParameterizeFilter (Filter):
+    def __init__(self, id, parameter):
+        super(ParameterizeFilter, self).__init__(id)
+        self._parameter = parameter
+
+    def filter(self, message):
+        message.text = str(self._parameter)
+        return message
+
 class PercentageFilter (Filter):
     def __init__(self, id, percentage):
         super(PercentageFilter, self).__init__(id)
