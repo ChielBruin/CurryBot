@@ -35,7 +35,7 @@ class InfoAction (Action):
                 Logger.log_debug(str(message))
                 return 'That is a message'
         else:
-            return '`putStrLn "Hello, World!"``\nI reply to your messages when I feel the need to.'
+            return '`putStrLn "Hello, World!"`\nI reply to your messages when I feel the need to.'
 
 
 class UpdateAction (Action):
