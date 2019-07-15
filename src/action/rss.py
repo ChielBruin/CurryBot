@@ -45,3 +45,8 @@ class RSSAction (Action):
         text = self.build_text(item)
         bot.send_message(chat_id=chat_id, text=msg, reply_to_message_id=reply_to)
         return [id]
+
+class RedditAction (RSSAction):
+    def __init__(self, id, subreddit, show=['title', 'link'], index=0):
+        url = 'https://www.reddit.com/r/%s.rss' % subreddit
+        super(RedditAction, self).__init__(id, url, show=show, index=index)
