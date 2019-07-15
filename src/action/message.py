@@ -11,16 +11,10 @@ class MessageAction (Action):
         Given the original message and the reply text pattern,
         try filling in the holes in the reply pattern.
         '''
-        if '\\' in reply_text:
-            if len(self.regexes) > 0:
-                for regex in self.regexes:
-                    try:
-                        return re.sub(regex, reply_text, message_text)
-                    except Exception:
-                        continue
-            elif '\\$' in reply_text:
-                return reply_text.replace('\\$', message_text)
-        return reply_text
+        if '%s' in reply_text:
+            return reply_text % message_text
+        else:
+            return reply_text
 
     def dispatch(self, bot, msg, exclude):
         (id, message) = self.select_random_option(exclude=exclude)
