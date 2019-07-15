@@ -12,7 +12,7 @@ class NoAction (Action):
 
 
 class PercentageAction (Action):
-    def __init__(self, id, left, right, percentage):
+    def __init__(self, id, percentage, left, right):
         super(PercentageAction, self).__init__(id)
         self._left = left
         self._right = right
@@ -29,6 +29,20 @@ class PercentageAction (Action):
             return self._left.dispatch_reply(bot, msg, reply_to, exclude)
         else:
             return self._right.dispatch_reply(bot, msg, reply_to, exclude)
+
+class UniformFromAction (Action):
+    def __init__(self, id, actions):
+        super(UniformFromAction, self).__init__(id)
+        self._actions = actions
+
+    def dispatch(self, bot, msg, exclude):
+        idx = random.randrange(len(self._actions))
+        return self._actions[idx].dispatch(bot, msg, exclude)
+
+
+    def dispatch_reply(self, bot, msg, reply_to, exclude):
+        idx = random.randrange(len(self._actions))
+        return self._actions[idx].dispatch_reply(bot, msg, reply_to, exclude)
 
 
 class AndAction (Action):

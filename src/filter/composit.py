@@ -19,36 +19,34 @@ class PercentageFilter (Filter):
 
 
 class AndFilter (Filter):
-    def __init__(self, id, left, right):
+    def __init__(self, id, filters):
         super(AndFilter, self).__init__(id)
-        self._left = left
-        self._right = right
+        self._filters = filters
 
     def update(self):
-        self._left.update()
-        self._right.update()
+        for filter in self._filter:
+            filter.update()
 
     def filter(self, message):
-        l_msg = self._left.filter(message)
-        if l_msg:
-            return self._right.filter(l_msg)
-        else:
-            return None
+        for filter in self._filters:
+            message = filter.filter(message)
+            if not message:
+                return None
+        return message
 
 
 class OrFilter (Filter):
-    def __init__(self, id, left, right):
+    def __init__(self, id, filters):
         super(OrFilter, self).__init__(id)
-        self._left = left
-        self._right = right
+        self._filters = filters
 
     def update(self):
-        self._left.update()
-        self._right.update()
+        for filter in self._filter:
+            filter.update()
 
     def filter(self, message):
-        l_msg = self._left.filter(message)
-        if l_msg:
-            return l_msg
-        else:
-            return self._right.filter(message)
+        for filter in self._filters:
+            msg = filter.filter(message)
+            if msg:
+                return msg
+        return None
