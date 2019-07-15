@@ -9,6 +9,7 @@ class MessageHandler (object):
         self.filter = filter
         self.behaviour = behaviour
         self.action = action
+        Logger.log_info('Action \'%s\' Initialized' % self.name)
 
     def update(self):
         try:
