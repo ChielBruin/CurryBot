@@ -79,10 +79,8 @@ class YtPlaylistAppendAction (Action):
 
     def dispatch(self, bot, msg, exclude):
         self._playlist_add(msg.text)
-        bot.send_message(chat_id=msg.chat.id, text='Playlist updated')
         return []
 
     def dispatch_reply(self, bot, msg, reply_to, exclude):
         self._playlist_add(msg.text)
-        bot.send_message(chat_id=msg.chat.id, text='Playlist updated', reply_to_message_id=reply_to)
         return []
