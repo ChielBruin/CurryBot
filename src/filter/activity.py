@@ -32,7 +32,7 @@ class ChatNoActivityFilter (AbstractNoActivityFilter):
         super(ChatNoActivityFilter, self).__init__(id, timedelta, cache_key, reset)
 
     def filter(self, message):
-        return self._filter(message, message.chat.id, 'chat')
+        return self._filter(message, str(message.chat.id), 'chat')
 
 
 class UserNoActivityFilter (AbstractNoActivityFilter):
@@ -40,4 +40,4 @@ class UserNoActivityFilter (AbstractNoActivityFilter):
         super(UserNoActivityFilter, self).__init__(id, timedelta, cache_key, reset)
 
     def filter(self, message):
-        return self._filter(message, message.from_user.id, 'user')
+        return self._filter(message, str(message.from_user.id), 'user')
