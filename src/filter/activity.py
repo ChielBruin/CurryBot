@@ -43,7 +43,7 @@ class ChatNoActivityFilter (AbstractNoActivityFilter):
 
 
 class UserNoActivityFilter (AbstractNoActivityFilter):
-    def __init__(self, id, timedelta, cache_key, reset=True, initial_time):
+    def __init__(self, id, timedelta, cache_key, reset=True, initial_time=None):
         super(UserNoActivityFilter, self).__init__(id, timedelta, cache_key, reset, initial_time)
 
     def filter(self, message):
