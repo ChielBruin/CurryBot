@@ -13,6 +13,7 @@ class AbstractNoActivityFilter (Filter):
 
     def _filter(self, message, id, key):
         time = message.date
+        id = str(id)
 
         cached = Cache.shared_get_cache(self.cache_key)
         if key in cached:
@@ -32,7 +33,7 @@ class ChatNoActivityFilter (AbstractNoActivityFilter):
         super(ChatNoActivityFilter, self).__init__(id, timedelta, cache_key, reset)
 
     def filter(self, message):
-        return self._filter(message, str(message.chat.id), 'chat')
+        return self._filter(message, message.chat.id, 'chat')
 
 
 class UserNoActivityFilter (AbstractNoActivityFilter):
@@ -40,4 +41,4 @@ class UserNoActivityFilter (AbstractNoActivityFilter):
         super(UserNoActivityFilter, self).__init__(id, timedelta, cache_key, reset)
 
     def filter(self, message):
-        return self._filter(message, str(message.from_user.id), 'user')
+        return self._filter(message.date, message.from_user.id, 'user')

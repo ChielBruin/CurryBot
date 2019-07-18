@@ -17,7 +17,7 @@ class AbstractMonitorActivityAction (Action):
 
     def log_activity(self, key, id, time):
         cache = Cache.shared_get_cache(self.cache_key)
-        cache[key][id] = time.timestamp()
+        cache[key][str(id)] = time.timestamp()
         Cache.shared_put_cache(self.cache_key, cache)
 
     def dispatch(self, bot, msg, exclude):
