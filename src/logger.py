@@ -1,3 +1,4 @@
+from telegram.error import TimedOut
 import traceback, sys
 
 
@@ -44,7 +45,7 @@ class Logger(object):
         cls._log(4, msg, details)
 
     @classmethod
-    def _log(cls, level, msg, details):
+    def _log(cls, level, msg, details, console_only=False):
         (level_str, level_color) = cls._get_level_string(level)
         for chat_id in cls._log_handlers:
             if level < cls._log_handlers[chat_id]:
@@ -53,9 +54,12 @@ class Logger(object):
             if chat_id == 'console':
                 line = '[%s%s\033[0m]\t- %s' % ('\033[%dm' % level_color, level_str, msg)
                 print(line)
-            else:
-                line = '*[%s]*\t- %s' % (level_str, msg.replace('_', '\\_'))
-                cls.bot.send_message(chat_id=chat_id, text=line, parse_mode='Markdown')
+            elif not console_only:
+                try:
+                    line = '*[%s]*\t- %s' % (level_str, msg.replace('_', '\\_'))
+                    cls.bot.send_message(chat_id=chat_id, text=line, parse_mode='Markdown')
+                except TimedOut:
+                    cls.log_error('Sending log message timed out')
 
             if details:
                 self.log_debug(details)
