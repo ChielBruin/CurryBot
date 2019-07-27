@@ -22,14 +22,14 @@ class TimeFilter (Filter):
     def filter(self, message):
         time = message.date
         if (
-                (not self.minute    or self.minute    is time.minute)
-            and (not self.hour      or self.hour      is time.hour)
-            and (not self.day       or self.day       is time.day)
-            and (not self.weekday   or self.weekday   is time.isoweekday())
-            and (not self.week      or self.week      is time.isocalendar()[1])
-            and (not self.month     or self.month     is time.month)
-            and (not self.monthweek or self.monthweek is self.calc_monthweek(time))
-            and (not self.year      or self.year      is time.year)
+                ((not self.minute    is None) or self.minute    is time.minute)
+            and ((not self.hour      is None) or self.hour      is time.hour)
+            and ((not self.day       is None) or self.day       is time.day)
+            and ((not self.weekday   is None) or self.weekday   is time.isoweekday())
+            and ((not self.week      is None) or self.week      is time.isocalendar()[1])
+            and ((not self.month     is None) or self.month     is time.month)
+            and ((not self.monthweek is None) or self.monthweek is self.calc_monthweek(time))
+            and ((not self.year      is None) or self.year      is time.year)
            ):
             return message
         else:
