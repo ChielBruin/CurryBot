@@ -1,9 +1,11 @@
 from action.action import Action
 
 
-class MessageAction (Action):
-    def __init__(self, id, message):
-        super(MessageAction, self).__init__(id)
+class AbstractMessageAction (Action):
+    def __init__(self, id, message, parse_mode, show_preview):
+        super(AbstractMessageAction, self).__init__(id)
+        self.parse_mode = parse_mode
+        self.show_preview = show_preview
         self.append_ids_indexed([message])
 
     def apply_message(self, message_text, reply_text):
@@ -20,15 +22,36 @@ class MessageAction (Action):
         (id, message) = self.select_random_option(exclude=exclude)
         applied_message = self.apply_message(msg.text, message)
 
-        bot.send_message(chat_id=msg.chat.id, text=applied_message)
+        bot.send_message(chat_id=msg.chat.id,
+                         text=applied_message,
+                         parse_mode=self.parse_mode,
+                         disable_web_page_preview=not self.show_preview)
         return [id]
 
     def dispatch_reply(self, bot, msg, reply_to, exclude):
         (id, message) = self.select_random_option(exclude=exclude)
         applied_message = self.apply_message(msg.text, message)
 
-        bot.send_message(chat_id=msg.chat.id, text=applied_message, reply_to_message_id=reply_to)
+        bot.send_message(chat_id=msg.chat.id,
+                         text=applied_message,
+                         reply_to_message_id=reply_to,
+                         parse_mode=self.parse_mode,
+                         disable_web_page_preview=not self.show_preview)
         return [id]
+
+class TextMessageAction (AbstractMessageAction):
+    def __init__(self, id, message, show_preview=True):
+        super(TextMessageAction, self).__init__(id, message, parse_mode=None, show_preview=show_preview)
+
+
+class MarkdownMessageAction (AbstractMessageAction):
+    def __init__(self, id, message, show_preview=True):
+        super(MarkdownMessageAction, self).__init__(id, message, parse_mode='Markdown', show_preview=show_preview)
+
+
+class HTMLMessageAction (AbstractMessageAction):
+    def __init__(self, id, message, show_preview=True):
+        super(HTMLMessageAction, self).__init__(id, message, parse_mode='HTML', show_preview=show_preview)
 
 
 class ForwardAction (Action):
