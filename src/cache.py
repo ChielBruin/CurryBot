@@ -79,6 +79,15 @@ class Cache(object):
     def shared_put_cache(cls, key, value):
         cls.shared_cache[key] = value
 
+
+    @classmethod
+    def shared_put_cache(cls, key, name, value):
+        if key in cls.shared_cache:
+            cls.shared_cache[key][name] = value
+        else:
+            cls.shared_cache[key] = {}
+            cls.shared_cache[key][name] = value
+
     @classmethod
     def shared_get_cache_encrypted(cls, key):
         if not cls.credentials_cipher:
@@ -98,6 +107,14 @@ class Cache(object):
             return cls.shared_cache[key]
         else:
             return None
+
+    @classmethod
+    def shared_get_cache(cls, key, name):
+        if key in cls.shared_cache:
+            dict = cls.shared_cache[key]
+            if name in dict:
+                return dict[name]
+        return None
 
     @classmethod
     def _add_padding(cls, text):
