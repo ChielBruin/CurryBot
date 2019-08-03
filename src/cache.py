@@ -81,7 +81,7 @@ class Cache(object):
 
 
     @classmethod
-    def shared_put_cache(cls, key, name, value):
+    def shared_dict_put_cache(cls, key, name, value):
         if key in cls.shared_cache:
             cls.shared_cache[key][name] = value
         else:
@@ -109,7 +109,7 @@ class Cache(object):
             return None
 
     @classmethod
-    def shared_get_cache(cls, key, name):
+    def shared_dict_get_cache(cls, key, name):
         if key in cls.shared_cache:
             dict = cls.shared_cache[key]
             if name in dict:

@@ -25,7 +25,7 @@ class AbstractVoteAction (Action):
         else:
             key = msg.message_id
 
-        out = Cache.shared_get_cache(self.key, key)
+        out = Cache.shared_dict_get_cache(self.key, key)
         if not out:
             out = (0, [])
         return (key, out)
@@ -38,7 +38,7 @@ class AbstractVoteAction (Action):
                 return False
             else:
                 users.append(msg.from_user.id)
-        Cache.shared_put_cache(self.key, key, (new_val, users))
+        Cache.shared_dict_put_cache(self.key, key, (new_val, users))
 
         return self.condition and self.condition(new_val)
 
