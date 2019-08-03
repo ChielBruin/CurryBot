@@ -12,7 +12,7 @@ class ReplyApplication (Application):
 
 class ParameterizeApplication (Application):
     def __init__(self, id, parameter):
-        super(ParameterizeFilter, self).__init__(id)
+        super(ParameterizeApplication, self).__init__(id)
         self._parameter = parameter
 
     def filter(self, message):
