@@ -33,11 +33,14 @@ class AbstractVoteAction (Action):
     def on_action(self, msg):
         key, (val, users) = self.get_votes(msg)
         new_val = self.do_count(val)
-        if self.check_user:
-            if msg.reply_to_message and msg.reply_to_message.from_user.id in users:
+
+        # The original message is the reply of this message
+        # so we need the user id from there
+        if self.check_user and msg.reply_to_message:
+            if msg.reply_to_message.from_user.id in users:
                 return False
             else:
-                users.append(msg.from_user.id)
+                users.append(msg.reply_to_message.from_user.id)
         Cache.shared_dict_put_cache(self.key, key, (new_val, users))
 
         return self.condition and self.condition(new_val)
