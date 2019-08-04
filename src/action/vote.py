@@ -34,7 +34,7 @@ class AbstractVoteAction (Action):
         key, (val, users) = self.get_votes(msg)
         new_val = self.do_count(val)
         if self.check_user:
-            if msg.from_user.id in users:
+            if msg.reply_to_message and msg.reply_to_message.from_user.id in users:
                 return False
             else:
                 users.append(msg.from_user.id)
