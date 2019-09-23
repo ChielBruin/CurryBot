@@ -11,6 +11,7 @@ def sigterm_handler(_signo, _stack_frame):
 
     # Get singleton of bot
     bot = CurryBot()
+    bot.update_cache()
 
     sys.exit(0)
 
@@ -31,7 +32,7 @@ def main():
     with open(sys.argv[1], "r") as config_file:
         loader = ConfigLoader(config_file)
         loader.apply_config(curry_bot)
-    
+
     # Gracefully handle kill
     signal(SIGTERM, sigterm_handler)
 
