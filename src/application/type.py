@@ -6,8 +6,13 @@ class ReplyApplication (Application):
         super(ReplyApplication, self).__init__(id)
 
     def filter(self, msg):
-        msg.reply_to_message.reply_to_message = msg       # Store the original so we can get it back
-        return msg.reply_to_message
+        if (msg.forward_from):
+            msg.forward_from.reply_to_message = msg           # Store the original so we can get it back
+            msg.forward_from
+
+        else:
+            msg.reply_to_message.reply_to_message = msg       # Store the original so we can get it back
+            return msg.reply_to_message
 
 
 class ParameterizeApplication (Application):
