@@ -3,6 +3,17 @@ import sys
 from bot import CurryBot
 from configLoader import ConfigLoader
 from cache import Cache
+from logger import Logger
+from signal import signal, SIGTERM
+
+def sigterm_handler(_signo, _stack_frame):
+    Logger.log_info('Gracefully exiting')
+
+    # Get singleton of bot
+    bot = CurryBot()
+    bot.update_cache()
+
+    sys.exit(0)
 
 
 def main():
@@ -22,6 +33,8 @@ def main():
         loader = ConfigLoader(config_file)
         loader.apply_config(curry_bot)
 
+    # Gracefully handle kill
+    signal(SIGTERM, sigterm_handler)
 
     curry_bot.start()
 
