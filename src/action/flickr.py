@@ -1,19 +1,19 @@
-from action.action import Action
+from messageHandler import MessageHandler
 from cache import Cache
 from logger import Logger
 
 import requests
 
-class FlickrAction (Action):
+class SendFlickr (MessageHandler):
     '''
     An action that sends images from Flickr albums when triggered.
     '''
 
-    def __init__(self, id, api_key, pack, include=None, exclude=None):
+    def __init__(self, api_key, pack, include=None, exclude=None):
         '''
         Initialize a FlickrAction by preloading the images in the given albums.
         '''
-        super(FlickrAction, self).__init__(id)
+        super(FlickrAction, self).__init__([])
         self.key = api_key
         self.pack = pack
         self.include = include
@@ -29,7 +29,7 @@ class FlickrAction (Action):
 
         include = self.include if self.include else images
         exclude = self.exclude if self.exclude else []
-        self.load_and_append_ids(images, (lambda id, self=self: self.load_image(id)), include=include, exclude=exclude, cache=True)
+        self.add_options(images, (lambda id, self=self: self.load_image(id)), include=include, exclude=exclude, cache=True)
 
     def load_image(self, id):
         '''
@@ -63,12 +63,7 @@ class FlickrAction (Action):
         msg = '<a href="%s">📷</a>' % image['url']
         return (id, msg)
 
-    def dispatch(self, bot, msg, exclude):
+    def call(self, bot, msg, target, exclude):
         (id, text) = self.select_reply(exclude)
-        bot.send_message(chat_id=msg.chat.id, text=text, parse_mode='HTML')
-        return [id]
-
-    def dispatch_reply(self, bot, msg, reply_to, exclude):
-        (id, text) = self.select_reply(exclude)
-        bot.send_message(chat_id=msg.chat.id, text=text, reply_to_message_id=reply_to, parse_mode='HTML')
+        bot.send_message(chat_id=msg.chat.id, text=text, reply_to_message_id=target, parse_mode='HTML')
         return [id]

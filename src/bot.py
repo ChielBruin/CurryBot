@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 
 from logger import Logger
 from cache import Cache
+from exceptions import FilterException
 
 def singleton(class_):
     instances = {}
@@ -26,14 +27,18 @@ class CurryBot (object):
 
         self._message_handlers = []
         self._tick_handlers = []
+        self.chat_admins = {}
 
     def set_token(self, token):
         self.updater = Updater(token)
         self.dispatcher = self.updater.dispatcher
         self.bot = self.updater.bot
 
+        self.dispatcher.add_handler(TelegramMessageHandler(Filters.status_update.new_chat_members,
+                            (lambda bot, update, self=self: self.on_new_chat_member(bot, update))))
+
         self.dispatcher.add_handler(TelegramMessageHandler(Filters.all,
-                                    (lambda bot, update, self=self: self.on_receive(bot, update))))
+                            (lambda bot, update, self=self: self.on_receive(bot, update))))
 
     def register_message_handler(self, handler):
         self._message_handlers.append(handler)
@@ -42,18 +47,29 @@ class CurryBot (object):
         self._tick_handlers.append(handler)
 
     def on_receive(self, bot, update):
-        self.on_receive_message(bot, update.message)
+        if update.message:
+            message = update.message
+        elif update.edited_message:
+            message = update.edited_message
+        else:
+            return
+        self.on_receive_message(bot, message)
 
     def on_receive_message(self, bot, message):
         '''
         Global message handler.
         Forwards the messages to the other handlers if applicable.
         '''
-        try:
-            for handler in self._message_handlers:
-                    handler.call(bot, message)
-        except Exception as ex:
-            Logger.log_exception(msg='This exception should never occur')
+        for handler in self._message_handlers:
+            try:
+                res = handler.call(bot, message, None, [])
+                if res is None:
+                    Logger.log_error(msg='Handler returned None instead of [..]')
+            except FilterException:
+                print('filtered')
+                continue
+            except Exception as ex:
+                Logger.log_exception(ex, msg='Exception while handling message')
 
     def on_receive_tick(self, bot, job):
         try:
@@ -64,7 +80,7 @@ class CurryBot (object):
             Logger.log_exception(ex, msg='This exception should never occur')
 
     def update_cache(self):
-        Logger.log_info('Updating cache')
+        Logger.log_debug('Updating cache')
         for handler in self._message_handlers:
             handler.update()
         for handler in self._tick_handlers:

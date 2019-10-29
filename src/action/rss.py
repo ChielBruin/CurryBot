@@ -1,14 +1,14 @@
-from action.action import Action
+from messageHandler import MessageHandler
 
 import feedparser, hashlib
 
-class RSSAction (Action):
+class SendRSS (MessageHandler):
     '''
     An action that sends items from RSS feeds.
     '''
 
-    def __init__(self, id, url, show=['title', 'link'], index=0):
-        super(RSSAction, self).__init__(id)
+    def __init__(self, url, show=['title', 'link'], index=0):
+        super(RSSAction, self).__init__([])
         self.url = url
         self.index = index
         self.show = show
@@ -28,25 +28,19 @@ class RSSAction (Action):
         item = self.get_item(offset)
         hash = hashlib.md5(item['title'].encode()).hexdigest()
         id = "%s_%s" % (self.id, hash)
-        
+
         if id in exclude:
             return self.select_item(exclude, offset+1)
         else:
             return (id, item)
 
-    def dispatch(self, bot, msg, exclude):
+    def dispatch_reply(self, bot, msg, target, exclude):
         (id, item) = self.select_item(exclude)
         text = self.build_text(item)
-        bot.send_message(chat_id=msg.chat.id, text=text)
+        bot.send_message(chat_id=chat_id, text=msg, reply_to_message_id=target)
         return [id]
 
-    def dispatch_reply(self, bot, msg, reply_to, exclude):
-        (id, item) = self.select_item(exclude)
-        text = self.build_text(item)
-        bot.send_message(chat_id=chat_id, text=msg, reply_to_message_id=reply_to)
-        return [id]
-
-class RedditAction (RSSAction):
-    def __init__(self, id, subreddit, show=['title', 'link'], index=0):
+class SendReddit (SendRSS):
+    def __init__(self, subreddit, show=['title', 'link'], index=0):
         url = 'https://www.reddit.com/r/%s.rss' % subreddit
-        super(RedditAction, self).__init__(id, url, show=show, index=index)
+        super(SendReddit, self).__init__(url, show=show, index=index)

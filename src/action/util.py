@@ -1,23 +1,21 @@
-from action.action import Action
+from messageHandler import MessageHandler
 from logger import Logger
 
-class InfoAction (Action):
+class ShowInfo (MessageHandler):
+    def __init__(self):
+        super(ShowInfo, self).__init__([])
 
-    def __init__(self, id, bot):
-        super(InfoAction, self).__init__(id)
-        self.bot = bot
-
-    def dispatch(self, bot, msg, exclude):
-        text = self.analyze_message(msg)
-        bot.send_message(chat_id=msg.chat.id, text=text, parse_mode='Markdown')
+    def call(self, bot, msg, target, exclude):
+        text = self.analyze_message(msg, bot)
+        bot.send_message(
+                    chat_id=msg.chat.id,
+                    text=text,
+                    parse_mode='Markdown',
+                    reply_to_message_id=target
+        )
         return []
 
-    def dispatch_reply(self, bot, msg, reply_to, exclude):
-        text = self.analyze_message(msg)
-        bot.send_message(chat_id=msg.chat.id, text=text, reply_to_message_id=reply_to, parse_mode='Markdown')
-        return []
-
-    def analyze_message(self, message):
+    def analyze_message(self, message, bot):
         Logger.log_info('Info command used:')
         Logger.log_info('Chat_id: %s' % str(message.chat.id))
         if message.reply_to_message:
@@ -35,22 +33,18 @@ class InfoAction (Action):
                 Logger.log_debug(str(message))
                 return 'That is a message'
         else:
-            return '`putStrLn "Hello, World!"`\nI reply to your messages when I feel the need to.'
+            return 'I\'m %s and I reply to your messages when I feel the need to.' % bot.first_name
 
 
-class UpdateAction (Action):
-    def __init__(self, id, bot):
-        super(UpdateAction, self).__init__(id)
+class ForceUpdate (MessageHandler):
+    def __init__(self, bot):
+        super(ForceUpdate, self).__init__([])
         self.bot = bot
 
     def do_update(self):
         Logger.log_info('Update command used')
         self.bot.update_cache()
 
-    def dispatch(self, bot, msg, exclude):
-        self.do_update()
-        return []
-
-    def dispatch_reply(self, bot, msg, reply_to, exclude):
+    def call(self, bot, msg, target, exclude):
         self.do_update()
         return []

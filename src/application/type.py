@@ -1,25 +1,26 @@
-from application.application import Application
+from messageHandler import MessageHandler
 
 
-class ReplyApplication (Application):
-    def __init__(self, id):
-        super(ReplyApplication, self).__init__(id)
+class SwapReply (MessageHandler):
+    def __init__(self, children):
+        super(SwapReply, self).__init__(children)
 
-    def filter(self, msg):
+    def call(self, bot, msg, target, exclude):
         if (msg.forward_from):
             msg.forward_from.reply_to_message = msg           # Store the original so we can get it back
-            msg.forward_from
-
-        else:
+            return self.propagate(bot, msg.forward_from, target, exclude)
+        elif msg.reply_to_message:
             msg.reply_to_message.reply_to_message = msg       # Store the original so we can get it back
-            return msg.reply_to_message
+            return self.propagate(bot, msg.reply_to_message, target, exclude)
+        else:
+            raise FilterException()
 
 
-class ParameterizeApplication (Application):
-    def __init__(self, id, parameter):
-        super(ParameterizeApplication, self).__init__(id)
+class ParameterizeText (MessageHandler):
+    def __init__(self, parameter, children):
+        super(ParameterizeText, self).__init__(children)
         self._parameter = parameter
 
-    def filter(self, message):
+    def call(self, bot, message, target, exclude):
         message.text = str(self._parameter)
-        return message
+        return self.propagate(bot, message, target, exclude)

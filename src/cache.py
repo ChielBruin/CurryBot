@@ -5,13 +5,13 @@ from Crypto.Cipher import AES
 
 
 class Cache(object):
-    handler_cache = {}
-    shared_cache = {}
+    _cache = {}
+    _save_cache = {}
     credentials_cipher = None
 
     @classmethod
     def set_cache_location(cls, loc):
-        Logger.log_trace('Cache location set to %s' % loc)
+        Logger.log_trace('Cache location set to \'%s\'' % loc)
         if not os.path.exists(loc):
             os.makedirs(loc)
         if os.path.isfile(loc):
@@ -21,7 +21,13 @@ class Cache(object):
 
     @classmethod
     def store_cache(cls):
-        cache = {'handlers': cls.handler_cache, 'shared': cls.shared_cache}
+        # Select all the cache entries of which the id is configured to store to disk
+        cache = {}
+        for cache_entry in cls._cache:
+            if cache_entry in cls._save_cache and cls._save_cache[cache_entry] is True:
+                cache[cache_entry] = cls._cache[cache_entry]
+
+        # Write the selected parts of the cache to file
         with open(cls.cache_location, 'w') as cache_file:
             Logger.log_debug('Writing cache to disk')
             json.dump(cache, cache_file)
@@ -33,32 +39,17 @@ class Cache(object):
                 Logger.log_debug('Loading cache')
                 content = cache_file.read()
                 if content:
-                    cache = json.loads(content)
-                    if ('handlers' not in cache) or ('shared' not in cache):
+                    try:
+                        cls._cache = json.loads(content)
+                    except:
+                        print(content)
                         Logger.log_error('Malformed cache, starting with a fresh cache')
-                    else:
-                        cls.handler_cache = cache['handlers']
-                        cls.shared_cache = cache['shared']
+                else:
+                    Logger.log_info('Cache file appears to be empty')
+                    self._cache = {}
         else:
-            Logger.log_trace('Cache file does not exist (can be ignored on the initial run)')
-            cls.handler_cache = {}
-            cls.shared_cache = {}
-
-    @classmethod
-    def handler_put_cache(cls, id, key, value):
-        if id not in cls.handler_cache:
-            cls.handler_cache[id] = {}
-        cls.handler_cache[id][key] = value
-
-    @classmethod
-    def handler_get_cache(cls, id, key):
-        if id not in cls.handler_cache:
-            return None
-        cache = cls.handler_cache[id]
-        if key in cache:
-            return cache[key]
-        else:
-            return None
+            Logger.log_error('Cache file does not exist (This error can be ignored on the initial run)')
+            cls._cache = {}
 
     @classmethod
     def set_cipher_pwd(cls, key):
@@ -67,54 +58,70 @@ class Cache(object):
         cls.credentials_cipher = AES.new(key, AES.MODE_ECB)
 
     @classmethod
-    def shared_put_cache_encrypted(cls, key, value):
-        if not cls.credentials_cipher:
-            Logger.log_error('No cipher key set for the cache')
-            return
-
-        encoded = cls.credentials_cipher.encrypt(cls._add_padding(value))
-        cls.shared_put_cache(key, encoded.hex())
+    def clear(cls, key):
+        cls.put(key, None)
 
     @classmethod
-    def shared_put_cache(cls, key, value):
-        cls.shared_cache[key] = value
-
+    def config_entry(cls, key, val):
+        cls._save_cache[key] = val
 
     @classmethod
-    def shared_dict_put_cache(cls, key, name, value):
-        if key in cls.shared_cache:
-            cls.shared_cache[key][name] = value
+    def put(cls, keys, value, encrypt=False):
+        if encrypt:
+            if not cls.credentials_cipher:
+                Logger.log_error('No cipher key set for the cache')
+                return
+            value = cls.credentials_cipher.encrypt(cls._add_padding(value)).hex()
+
+        if isinstance(keys, list):
+            cls._put_list(keys, value)
         else:
-            cls.shared_cache[key] = {}
-            cls.shared_cache[key][name] = value
+            cls._put_single(keys, value)
 
     @classmethod
-    def shared_get_cache_encrypted(cls, key):
-        if not cls.credentials_cipher:
-            Logger.log_error('No cipher key set for the cache')
-            return None
-
-        cached = cls.shared_get_cache(key)
-        if cached:
-            hex_bytes = cls._remove_padding(cls.credentials_cipher.decrypt(bytes.fromhex(cached)))
-            return hex_bytes
+    def get(cls, keys, decrypt=False):
+        if isinstance(keys, list):
+            val = cls._get_list(keys)
         else:
-            return None
+            val = cls._get_single(keys)
 
-    @classmethod
-    def shared_get_cache(cls, key):
-        if key in cls.shared_cache:
-            return cls.shared_cache[key]
+        if decrypt:
+            if not cls.credentials_cipher:
+                Logger.log_error('No cipher key set for the cache')
+                return None
+            return cls._remove_padding(cls.credentials_cipher.decrypt(bytes.fromhex(val)))
         else:
-            return None
+            return val
 
     @classmethod
-    def shared_dict_get_cache(cls, key, name):
-        if key in cls.shared_cache:
-            dict = cls.shared_cache[key]
-            if name in dict:
-                return dict[name]
-        return None
+    def _put_list(cls, keys, value):
+        cache = cls._cache
+        for key in keys[:-1]:
+            if key not in cache:
+                cache[key] = {}
+            cache = cache[key]
+        cache[-1] = value
+
+    @classmethod
+    def _put_single(cls, key, value):
+        cache = cls._cache
+        cls._cache[key] = value
+
+    @classmethod
+    def _get_list(cls, keys):
+        cache = cls._cache
+        for key in keys:
+            if key not in cache:
+                return None
+            else:
+                cache = cache[key]
+
+        return cache
+
+    @classmethod
+    def _get_single(cls, key):
+        return cls._cache[key]
+
 
     @classmethod
     def _add_padding(cls, text):

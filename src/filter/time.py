@@ -1,9 +1,10 @@
-from filter.filter import Filter
+from messageFilter import Filter
+from exceptions import FilterException
 
 
-class TimeFilter (Filter):
-    def __init__(self, id, minute=None, hour=None, day=None, weekday=None, week=None, month=None, monthweek=None, year=None):
-        super(TimeFilter, self).__init__(id)
+class TimeFilter (MessageHandler):
+    def __init__(self, minute=None, hour=None, day=None, weekday=None, week=None, month=None, monthweek=None, year=None, children):
+        super(TimeFilter, self).__init__(children)
 
         self.minute    = minute
         self.hour      = hour
@@ -19,7 +20,7 @@ class TimeFilter (Filter):
         first_day_of_this_week = date.day - day
         return 1 + (first_day_of_this_week // 7)
 
-    def filter(self, message):
+    def call(self, bot, message, target, exclude):
         time = message.date
         if (
                 ((self.minute    is None) or self.minute    is time.minute)
@@ -31,6 +32,6 @@ class TimeFilter (Filter):
             and ((self.monthweek is None) or self.monthweek is self.calc_monthweek(time))
             and ((self.year      is None) or self.year      is time.year)
            ):
-            return message
+            return self.propagate(bot, message, target, exclude)
         else:
-            return None
+            raise FilterException()
