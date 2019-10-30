@@ -6,6 +6,30 @@ from messageHandler import MessageHandler
 from exceptions     import FilterException
 
 
+class SelfJoinedChat (MessageHandler):
+    def __init__(self, children):
+        super(SelfJoinedChat, self).__init__(children)
+
+    def call(self, bot, message, target, exclude):
+        if message.new_chat_members:
+            try:
+                next(filter(lambda usr: usr.id == bot.id, message.new_chat_members))
+                return self.propagate(bot, message, target, exclude)
+            except StopIteration as e:
+                raise FilterException()
+        else:
+            raise FilterException()
+
+class UserJoinedChat (MessageHandler):
+    def __init__(self, children):
+        super(SelfJoinedChat, self).__init__(children)
+
+    def call(self, bot, message, target, exclude):
+        if message.new_chat_members:
+            self.propagate(bot, message, target, exclude)
+        else:
+            raise FilterException()
+
 class IsReply (MessageHandler):
     def __init__(self, children):
         super(IsReply, self).__init__(children)
@@ -13,17 +37,6 @@ class IsReply (MessageHandler):
     def call(self, bot, message, target, exclude):
         if message.reply_to_message:
             self.propagate(bot, message, target, exclude)
-        else:
-            raise FilterException()
-
-class InChat (MessageHandler):
-    def __init__(self, chat_id, children):
-        super(InChat, self).__init__(children)
-        self.chat_id = chat_id
-
-    def call(self, bot, message, target, exclude):
-        if message.chat.id == self.chat_id:
-            return self.propagate(bot, message, target, exclude)
         else:
             raise FilterException()
 
@@ -51,20 +64,14 @@ class InPrivateChat (MessageHandler):
             raise FilterException()
 
 class SenderIsBotAdmin (MessageHandler):
-    def __init__(self, admins, children):
+    def __init__(self, children):
         super(SenderIsBotAdmin, self).__init__(children)
-        self._admins = admins
 
     def call(self, bot, message, target, exclude):
         chat_id = message.chat.id
+        user_id = message.from_user.id
 
-        if chat_id in self._admins:
-            chat_admins = self._admins[chat_id]
-        else:
-            chat_admins = []
-            Logger.log_error(msg='No admin for chat with id %d' % chat_id)
-
-        if message.from_user.id in chat_admins:
+        if Config.is_chat_admin(chat_id, user_id):
             return self.propagate(bot, message, target, exclude)
         else:
             raise FilterException()

@@ -4,7 +4,7 @@ from messageHandler import MessageHandler
 from exceptions import FilterException
 
 class AbstractRegexFilter (MessageHandler):
-    def __init__(self, regex, children, group=None):
+    def __init__(self, regex, children=[], group=None):
         super(AbstractRegexFilter, self).__init__(children)
         self._regex = re.compile(regex)
         self._group = group
@@ -17,7 +17,7 @@ class AbstractRegexFilter (MessageHandler):
         if match:
             if self._group:
                 message.text = match.group(self._group)
-            self.propagate(bot, message, target, exclude)
+            return self.propagate(bot, message, target, exclude)
         else:
             raise FilterException()
 

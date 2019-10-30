@@ -1,5 +1,6 @@
 from messageHandler import MessageHandler
 from logger import Logger
+from config import Config
 
 class ShowInfo (MessageHandler):
     def __init__(self):
@@ -41,10 +42,24 @@ class ForceUpdate (MessageHandler):
         super(ForceUpdate, self).__init__([])
         self.bot = bot
 
-    def do_update(self):
-        Logger.log_info('Update command used')
+    def call(self, bot, msg, target, exclude):
         self.bot.update_cache()
+        return []
+
+
+class MakeSenderAdmin (MessageHandler):
+    def __init__(self):
+        super(MakeSenderAdmin, self).__init__([])
 
     def call(self, bot, msg, target, exclude):
-        self.do_update()
+        Config.add_chat_admin(msg.chat.id, msg.from_user.id)
+        return []
+
+
+class MakeSenderAdmin (MessageHandler):
+    def __init__(self):
+        super(MakeSenderAdmin, self).__init__([])
+
+    def call(self, bot, msg, target, exclude):
+        Config.add_chat_admin(msg.chat.id, msg.from_user.id)
         return []

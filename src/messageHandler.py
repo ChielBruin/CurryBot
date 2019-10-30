@@ -3,8 +3,9 @@ from telegram import Message, Chat
 
 from logger import Logger
 from cache import Cache
+from exceptions import FilterException
 
-class MessageHandler (object):
+class Handler (object):
     def __init__(self, children=[]):
         if isinstance(children, list):
             self.children = children
@@ -25,9 +26,9 @@ class MessageHandler (object):
 
     def propagate(self, bot, message, target, exclude):
         res = []
-        copy = len(self.children) > 1
+        do_copy = len(self.children) > 1
         for child in self.children:
-            res.extend(child.call(bot, message, target, copy.copy(exclude) if copy else exclude))
+            res.extend(child.call(bot, message, target, copy.copy(exclude) if do_copy else exclude))
         return res
 
     def on_children_update(self, children):
@@ -36,6 +37,7 @@ class MessageHandler (object):
     def on_update(self):
         pass
 
+class MessageHandler (Handler):
     def call(self, bot, message, target):
         raise Exception('Filter not implemented')
 
@@ -53,13 +55,13 @@ class RandomMessageHandler (MessageHandler):
     def clear(self):
         Cache.clear(self._id)
 
-    def add_options(self, options, get_value=None):
+    def add_options(self, options, get_value=None, include=None, exclude=[]):
         if isinstance(options, list):
-            self._add_options(options, get_value)
+            self._add_options(options, get_value, include, exclude)
         else:
-            self._add_options([options], get_value)
+            self._add_options([options], get_value, include, exclude)
 
-    def _add_options(self, options, get_value, include=None, exclude=[]):
+    def _add_options(self, options, get_value, include, exclude):
         """
         options == [(k, v)] -> direct key value store
         options == [v] && get_value == None -> store values indexed
@@ -84,7 +86,7 @@ class RandomMessageHandler (MessageHandler):
                     continue
                 Cache.put([self._id, key], val)
             else:
-                if option not in include or option in include:
+                if option not in include or option in exclude:
                     continue
                 if get_value is None:
                     Cache.put([self._id, idx], option)
@@ -105,13 +107,14 @@ class RandomMessageHandler (MessageHandler):
         Select a random id excluding the ones in `exclude`.
         '''
         options = Cache.get(self._id)
-        if len(options) is 1:
+        size = len(options)
+        if size is 1:
             return next(iter(options))
 
         if len(exclude) is size:
             exclude = []
 
-        keys = options.keys()
+        keys = list(options.keys())
         while True:
             rand = random.randrange(size)
             id = keys[rand]
@@ -119,16 +122,16 @@ class RandomMessageHandler (MessageHandler):
                  return id
 
 
-class TickHandler (object):
+class TickHandler (Handler):
     def __init__(self, groups, children):
+        super(TickHandler, self).__init__(children)
         self.groups = groups
-        self.children = children
 
     def call(self, bot, time):
         res = []
         for group_id in self.groups:
             msg = Message(-1, None, time, Chat(group_id, 'tick_group %s' % group_id), text='tick @ %s' % time.strftime('%Y-%m-%d %H:%M:%S'))
-            for child in children:
+            for child in self.children:
                 try:
                     out = child.call(bot, msg, None, [])
                     res.extend(out)

@@ -25,7 +25,8 @@ class CurryBot (object):
         self.updater = None
         self.dispatcher = None
 
-        self._message_handlers = []
+        self._global_message_handlers = []
+        self._chat_message_handlers = {}
         self._tick_handlers = []
         self.chat_admins = {}
 
@@ -34,14 +35,20 @@ class CurryBot (object):
         self.dispatcher = self.updater.dispatcher
         self.bot = self.updater.bot
 
-        self.dispatcher.add_handler(TelegramMessageHandler(Filters.status_update.new_chat_members,
-                            (lambda bot, update, self=self: self.on_new_chat_member(bot, update))))
-
         self.dispatcher.add_handler(TelegramMessageHandler(Filters.all,
                             (lambda bot, update, self=self: self.on_receive(bot, update))))
 
-    def register_message_handler(self, handler):
-        self._message_handlers.append(handler)
+    def register_message_handler(self, chats=None, handler=None):
+        if not handler:
+            raise Exception('No handler provided when registering a handler')
+        if chats is None:
+            self._global_message_handlers.append(handler)
+        else:
+            for chat in chats:
+                if chat in self._chat_message_handlers:
+                    self._chat_message_handlers[chat].append(handler)
+                else:
+                    self._chat_message_handlers[chat] = [handler]
 
     def register_tick_handler(self, handler):
         self._tick_handlers.append(handler)
@@ -60,16 +67,23 @@ class CurryBot (object):
         Global message handler.
         Forwards the messages to the other handlers if applicable.
         '''
-        for handler in self._message_handlers:
+        def call_handler(handler, bot, message):
             try:
                 res = handler.call(bot, message, None, [])
                 if res is None:
                     Logger.log_error(msg='Handler returned None instead of [..]')
             except FilterException:
-                print('filtered')
-                continue
+                pass
             except Exception as ex:
                 Logger.log_exception(ex, msg='Exception while handling message')
+
+        for handler in self._global_message_handlers:
+            call_handler(handler, bot, message)
+
+        chat_id = message.chat.id
+        if chat_id in self._chat_message_handlers:
+            for handler in self._chat_message_handlers[chat_id]:
+                call_handler(handler, bot, message)
 
     def on_receive_tick(self, bot, job):
         try:
@@ -81,11 +95,15 @@ class CurryBot (object):
 
     def update_cache(self):
         Logger.log_debug('Updating cache')
-        for handler in self._message_handlers:
+        for handler in self._global_message_handlers:
             handler.update()
+        for chat in self._chat_message_handlers:
+            for handler in self._chat_message_handlers[chat]:
+                handler.update()
         for handler in self._tick_handlers:
             handler.update()
         Cache.store_cache()
+        Config.store_config()
 
     def start(self):
         '''

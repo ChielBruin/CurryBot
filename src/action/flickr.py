@@ -1,35 +1,36 @@
-from messageHandler import MessageHandler
+from messageHandler import RandomMessageHandler
 from cache import Cache
 from logger import Logger
 
 import requests
 
-class SendFlickr (MessageHandler):
+class SendFlickr (RandomMessageHandler):
     '''
     An action that sends images from Flickr albums when triggered.
     '''
 
-    def __init__(self, api_key, pack, include=None, exclude=None):
+    def __init__(self, id, api_key, pack, include=None, exclude=None):
         '''
         Initialize a FlickrAction by preloading the images in the given albums.
         '''
-        super(FlickrAction, self).__init__([])
+        super(SendFlickr, self).__init__(id, [])
         self.key = api_key
         self.pack = pack
         self.include = include
         self.exclude = exclude
 
+        Cache.config_entry(self._id, True)
         self.update()
 
     def update(self):
-        Logger.log_debug('Updating cache of %s' % self.id)
+        Logger.log_debug('Updating flickr cache')
         flickr_album = self.make_request('flickr.photosets.getPhotos', 'photoset', {'photoset_id': self.pack})
         name = flickr_album['title']
         images = list(map(lambda x: x['id'], flickr_album['photo']))
 
         include = self.include if self.include else images
         exclude = self.exclude if self.exclude else []
-        self.add_options(images, (lambda id, self=self: self.load_image(id)), include=include, exclude=exclude, cache=True)
+        self.add_options(images, (lambda id, self=self: self.load_image(id)), include=include, exclude=exclude)
 
     def load_image(self, id):
         '''

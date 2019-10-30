@@ -26,5 +26,5 @@ class SendSticker (RandomMessageHandler):
     def update(self):
         stickerpack = self.bot.get_sticker_set(self.pack_id)
         stickers = list(map(lambda x: x.file_id, stickerpack.stickers))
-        self.clear_ids()
+        self.clear()
         self.add_options(stickers, self.include, self.exclude)

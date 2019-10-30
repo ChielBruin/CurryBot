@@ -43,22 +43,21 @@ class SendHTMLMessage (AbstractSendMessage):
         super(SendHTMLMessage, self).__init__(message, parse_mode='HTML', show_preview=show_preview)
 
 
-# class Forward (MessageHandler):
-#     '''
-#     An action that forwards a message.
-#     '''
-#
-#     def __init__(self, id, chat_id, msg_id):
-#         '''
-#         Load all the messages from the given config
-#         '''
-#         super(ForwardAction, self).__init__(id)
-#         self.chat_id = chat_id
-#         self.msg_id = msg_id
-#
-#     def dispatch(self, bot, msg, exclude):
-#         bot.forward_message(chat_id=msg.chat.id, from_chat_id=self.chat_id, message_id=self.msg_id)
-#         return [self.id]
-#
-#     def dispatch_reply(self, bot, msg, reply_to, exclude):
-#         raise Exception('You cannot reply using a forwarded message')
+class Forward (MessageHandler):
+    '''
+    An action that forwards a message.
+    '''
+
+    def __init__(self, chat_id, msg_id):
+        '''
+        Load all the messages from the given config
+        '''
+        super(ForwardAction, self).__init__([])
+        self.chat_id = chat_id
+        self.msg_id = msg_id
+
+    def call(self, bot, msg, target, exclude):
+        if target:
+            raise Exception('You cannot reply using a forwarded message')
+        bot.forward_message(chat_id=msg.chat.id, from_chat_id=self.chat_id, message_id=self.msg_id)
+        return [self.id]

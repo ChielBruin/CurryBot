@@ -6,19 +6,20 @@ import random, copy
 class PickWeighted (MessageHandler):
     def __init__(self, config):
         self.size = 0
-        weights = []
+        self.weights = []
         children = []
         for (weight, child) in config:
             children.append(child)
-            weights.append(weight + self.size)
+            self.weights.append(weight + self.size)
             self.size += weight
         super(PickWeighted, self).__init__(children)
 
     def call(self, bot, msg, target, exclude):
         rand = random.randrange(self.size)
         for index, weight in enumerate(self.weights):
-            if rand >= weight:
+            if rand <= weight:
                 return self.children[index].call(bot, msg, target, exclude)
+        print(rand, self.weights)
         raise Exception('Off by at least one in random selection')
 
 
@@ -40,7 +41,7 @@ class PercentageFilter (MessageHandler):
         if random.randrange(100) <= self._percentage:
             return self.propagate(bot, message, target, exclude)
         else:
-            return FilterException()
+            raise FilterException()
 
 class Try (MessageHandler):
     def __init__(self, children, extend=[]):

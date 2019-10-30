@@ -94,13 +94,32 @@ class Cache(object):
             return val
 
     @classmethod
+    def contains(cls, keys):
+        if isinstance(keys, list):
+            return cls._contains(keys)
+        else:
+            return cls._contains([keys])
+
+    @classmethod
+    def _contains(cls, keys):
+        cache = cls._cache
+        for key in keys:
+            if key not in cache:
+                return False
+            else:
+                cache = cache[key]
+
+        return True
+
+
+    @classmethod
     def _put_list(cls, keys, value):
         cache = cls._cache
         for key in keys[:-1]:
-            if key not in cache:
+            if key not in cache or cache[key] is None:
                 cache[key] = {}
             cache = cache[key]
-        cache[-1] = value
+        cache[keys[-1]] = value
 
     @classmethod
     def _put_single(cls, key, value):

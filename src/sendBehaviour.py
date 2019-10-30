@@ -10,7 +10,7 @@ class SendBehaviour (MessageHandler):
     REPLY = 2
     TRANS = 3
 
-    def __init__(self, children, message=[1], reply=[1], forward=[0]):
+    def __init__(self, children=[], message=[1], reply=[1], forward=[0]):
         super(SendBehaviour, self).__init__(children)
         self._message = message
         self._reply   = reply
@@ -41,7 +41,7 @@ class SendBehaviour (MessageHandler):
     def call(self, bot, message, target, exclude):
         res = []
         for new_target in self.apply(message):
-            out = self.propagate(bot, message, new_target, copy.copy(exclude) if copy else exclude)
+            out = self.propagate(bot, message, new_target, copy.copy(exclude))
             res.append(out)
         return res
 
