@@ -40,6 +40,9 @@ class SendRSS (MessageHandler):
         bot.send_message(chat_id=chat_id, text=msg, reply_to_message_id=target)
         return [id]
 
+    def has_effect():
+        return True
+
 class SendReddit (SendRSS):
     def __init__(self, subreddit, show=['title', 'link'], index=0):
         url = 'https://www.reddit.com/r/%s.rss' % subreddit

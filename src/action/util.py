@@ -16,6 +16,9 @@ class ShowInfo (MessageHandler):
         )
         return []
 
+    def has_effect():
+        return True
+
     def analyze_message(self, message, bot):
         Logger.log_info('Info command used:')
         Logger.log_info('Chat_id: %s' % str(message.chat.id))
@@ -46,14 +49,8 @@ class ForceUpdate (MessageHandler):
         self.bot.update_cache()
         return []
 
-
-class MakeSenderAdmin (MessageHandler):
-    def __init__(self):
-        super(MakeSenderAdmin, self).__init__([])
-
-    def call(self, bot, msg, target, exclude):
-        Config.add_chat_admin(msg.chat.id, msg.from_user.id)
-        return []
+    def has_effect():
+        return True
 
 
 class MakeSenderAdmin (MessageHandler):
@@ -63,3 +60,6 @@ class MakeSenderAdmin (MessageHandler):
     def call(self, bot, msg, target, exclude):
         Config.add_chat_admin(msg.chat.id, msg.from_user.id)
         return []
+
+    def has_effect():
+        return True

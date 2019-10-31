@@ -37,6 +37,9 @@ class Handler (object):
     def on_update(self):
         pass
 
+    def has_effect():
+        return False
+
 class MessageHandler (Handler):
     def call(self, bot, message, target):
         raise Exception('Filter not implemented')

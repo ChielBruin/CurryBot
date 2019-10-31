@@ -28,3 +28,6 @@ class SendSticker (RandomMessageHandler):
         stickers = list(map(lambda x: x.file_id, stickerpack.stickers))
         self.clear()
         self.add_options(stickers, self.include, self.exclude)
+
+    def has_effect():
+        return True

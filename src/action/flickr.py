@@ -68,3 +68,6 @@ class SendFlickr (RandomMessageHandler):
         (id, text) = self.select_reply(exclude)
         bot.send_message(chat_id=msg.chat.id, text=text, reply_to_message_id=target, parse_mode='HTML')
         return [id]
+
+    def has_effect():
+        return True

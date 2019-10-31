@@ -28,6 +28,9 @@ class AbstractSendMessage (RandomMessageHandler):
                          disable_web_page_preview=not self.show_preview)
         return [id]
 
+    def has_effect():
+        return True
+
 class SendTextMessage (AbstractSendMessage):
     def __init__(self, message, show_preview=True):
         super(SendTextMessage, self).__init__(message, parse_mode=None, show_preview=show_preview)
