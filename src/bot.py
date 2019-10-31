@@ -114,5 +114,5 @@ class CurryBot (object):
         self.dispatcher.job_queue.run_repeating(lambda b, j, self=self: self.update_cache(),
                 timedelta(days=1), first=timedelta(hours= 24 - datetime.now().hour))
 
-        Logger.log_info('CurryBot started')
+        Logger.log_info('%s started' % self.bot.first_name)
         self.updater.idle()

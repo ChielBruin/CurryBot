@@ -32,6 +32,21 @@ class PickUniform (MessageHandler):
         return self.children[index].call(bot, msg, target, exclude)
 
 
+class Not (MessageHandler):
+    def __init__(self, condition, children):
+        super(Not, self).__init__(children)
+        if condition.has_effect():
+            raise Exception('A handler for Not condition should not have effects')
+        self.condition = condition
+
+    def call(self, bot, msg, target, exclude):
+        try:
+            self.condition.call(bot, copy.copy(msg), target, copy.copy(exclude))
+            raise FilterException()
+        except FilterException:
+            return self.propagate(bot, msg, target, exclude)
+
+
 class PercentageFilter (MessageHandler):
     def __init__(self, percentage, children):
         super(PercentageFilter, self).__init__(children)
