@@ -5,17 +5,9 @@ from datetime import datetime, timedelta
 
 from logger import Logger
 from cache import Cache
+from config import Config
 from exceptions import FilterException
 
-def singleton(class_):
-    instances = {}
-    def getinstance(*args, **kwargs):
-        if class_ not in instances:
-            instances[class_] = class_(*args, **kwargs)
-        return instances[class_]
-    return getinstance
-
-@singleton
 class CurryBot (object):
     def __init__(self):
         '''
@@ -31,7 +23,7 @@ class CurryBot (object):
         self.chat_admins = {}
 
     def set_token(self, token):
-        self.updater = Updater(token)
+        self.updater = Updater(token, user_sig_handler=lambda s, f, self=self: self.on_exit())
         self.dispatcher = self.updater.dispatcher
         self.bot = self.updater.bot
 
@@ -102,6 +94,11 @@ class CurryBot (object):
                 handler.update()
         for handler in self._tick_handlers:
             handler.update()
+        Cache.store_cache()
+        Config.store_config()
+
+    def on_exit(self):
+        Logger.log_info(msg='Shutting down')
         Cache.store_cache()
         Config.store_config()
 

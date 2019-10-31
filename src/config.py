@@ -20,3 +20,11 @@ class Config (object):
         else:
             Logger.log_error('No admin set for chat %d' % chat_id)
             return False
+
+    @classmethod
+    def store_config(cls):
+        pass
+
+    @classmethod
+    def load_config(cls):
+        pass
