@@ -38,7 +38,25 @@ class Handler (object):
         pass
 
     def has_effect():
-        return False
+        if len(self.children) > 0:
+            for child in self.children:
+                if child.has_effect():
+                    return True
+            return False
+        else:
+            return False
+
+    @classmethod
+    def is_entrypoint(cls):
+        raise Exception('is_entrypoint not implemented for %s' % cls)
+
+    @classmethod
+    def get_name(cls):
+        raise Exception('get_name not implemented for %s' % cls)
+
+    @classmethod
+    def create(cls, stage, data, arg):
+        raise Exception('create not implemented for %s' % cls)
 
 class MessageHandler (Handler):
     def call(self, bot, message, target):

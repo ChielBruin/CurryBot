@@ -31,3 +31,11 @@ class SendSticker (RandomMessageHandler):
 
     def has_effect():
         return True
+
+    @classmethod
+    def is_entrypoint(cls):
+        return False
+
+    @classmethod
+    def get_name(cls):
+        return "Send a sticker"

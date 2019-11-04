@@ -1,11 +1,13 @@
-from telegram.ext import Updater, CommandHandler, Filters
+from telegram.ext import Updater, Filters, CallbackQueryHandler
 from telegram.ext import MessageHandler as TelegramMessageHandler
+import traceback
 
 from datetime import datetime, timedelta
 
 from logger import Logger
 from cache import Cache
 from config import Config
+from configConversation import ConfigConversation
 from exceptions import FilterException
 
 class CurryBot (object):
@@ -27,25 +29,29 @@ class CurryBot (object):
         self.dispatcher = self.updater.dispatcher
         self.bot = self.updater.bot
 
+        self.dispatcher.add_handler(ConfigConversation(self).get_conversation_handler())
         self.dispatcher.add_handler(TelegramMessageHandler(Filters.all,
                             (lambda bot, update, self=self: self.on_receive(bot, update))))
 
-    def register_message_handler(self, chats=None, handler=None):
+    def register_message_handler(self, chat=None, handler=None):
         if not handler:
             raise Exception('No handler provided when registering a handler')
-        if chats is None:
+        if chat is None:
             self._global_message_handlers.append(handler)
         else:
-            for chat in chats:
-                if chat in self._chat_message_handlers:
-                    self._chat_message_handlers[chat].append(handler)
-                else:
-                    self._chat_message_handlers[chat] = [handler]
+            if chat in self._chat_message_handlers:
+                self._chat_message_handlers[chat].append(handler)
+            else:
+                self._chat_message_handlers[chat] = [handler]
 
     def register_tick_handler(self, handler):
         self._tick_handlers.append(handler)
 
     def on_receive(self, bot, update):
+        chat = update.message.chat
+        if chat.title:  # If not private chat
+            Config.set_chat_title(chat.id, chat.title)
+
         if update.message:
             message = update.message
         elif update.edited_message:
@@ -68,6 +74,7 @@ class CurryBot (object):
                 pass
             except Exception as ex:
                 Logger.log_exception(ex, msg='Exception while handling message')
+                traceback.print_exc()
 
         for handler in self._global_message_handlers:
             call_handler(handler, bot, message)
@@ -81,7 +88,7 @@ class CurryBot (object):
         try:
             time = datetime.now()
             for handler in self._tick_handlers:
-                    handler.call(bot, time)
+                handler.call(bot, time)
         except Exception as ex:
             Logger.log_exception(ex, msg='This exception should never occur')
 

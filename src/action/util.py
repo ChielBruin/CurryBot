@@ -40,6 +40,7 @@ class ShowInfo (MessageHandler):
             return 'I\'m %s and I reply to your messages when I feel the need to.' % bot.first_name
 
 
+
 class ForceUpdate (MessageHandler):
     def __init__(self, bot):
         super(ForceUpdate, self).__init__([])
@@ -53,13 +54,23 @@ class ForceUpdate (MessageHandler):
         return True
 
 
+
 class MakeSenderAdmin (MessageHandler):
     def __init__(self):
         super(MakeSenderAdmin, self).__init__([])
 
     def call(self, bot, msg, target, exclude):
+        print(msg.chat.title)
         Config.add_chat_admin(msg.chat.id, msg.from_user.id)
         return []
 
     def has_effect():
         return True
+
+    @classmethod
+    def is_entrypoint(cls):
+        return False
+
+    @classmethod
+    def get_name(cls):
+        return "Make sender bot admin"

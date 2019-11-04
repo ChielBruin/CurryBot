@@ -15,6 +15,15 @@ class SwapReply (MessageHandler):
         else:
             raise FilterException()
 
+    @classmethod
+    def is_entrypoint(cls):
+        return False
+
+    @classmethod
+    def get_name(cls):
+        return "Swap message and its reply"
+
+
 class SwapSender (MessageHandler):
     def __init__(self, children):
         super(SwapSender, self).__init__(children)
@@ -29,6 +38,15 @@ class SwapSender (MessageHandler):
         else:
             raise FilterException()
 
+    @classmethod
+    def is_entrypoint(cls):
+        return False
+
+    @classmethod
+    def get_name(cls):
+        return "Swap sender and replier"
+
+
 
 class ParameterizeText (MessageHandler):
     def __init__(self, parameter, children):
@@ -38,3 +56,11 @@ class ParameterizeText (MessageHandler):
     def call(self, bot, message, target, exclude):
         message.text = str(self._parameter)
         return self.propagate(bot, message, target, exclude)
+
+    @classmethod
+    def is_entrypoint(cls):
+        return False
+
+    @classmethod
+    def get_name(cls):
+        return "Replace message text"

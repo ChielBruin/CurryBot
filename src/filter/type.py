@@ -4,31 +4,38 @@ from telegram import MessageEntity
 from logger         import Logger
 from messageHandler import MessageHandler
 from exceptions     import FilterException
+from config         import Config
 
+from configResponse import Send, Done, AskChildren
 
-class SelfJoinedChat (MessageHandler):
-    def __init__(self, children):
-        super(SelfJoinedChat, self).__init__(children)
-
-    def call(self, bot, message, target, exclude):
-        if message.new_chat_members:
-            try:
-                next(filter(lambda usr: usr.id == bot.id, message.new_chat_members))
-                return self.propagate(bot, message, target, exclude)
-            except StopIteration as e:
-                raise FilterException()
-        else:
-            raise FilterException()
 
 class UserJoinedChat (MessageHandler):
     def __init__(self, children):
-        super(SelfJoinedChat, self).__init__(children)
+        super(UserJoinedChat, self).__init__(children)
 
     def call(self, bot, message, target, exclude):
         if message.new_chat_members:
-            self.propagate(bot, message, target, exclude)
+            return self.propagate(bot, message, target, exclude)
         else:
             raise FilterException()
+
+    @classmethod
+    def is_entrypoint(cls):
+        return True
+
+    @classmethod
+    def get_name(cls):
+        return "Someone joined the chat"
+
+    @classmethod
+    def create(cls, stage, data, arg):
+        if stage is 0:
+            return (1, None, AskChildren())
+        elif stage is 1 and isinstance(arg, list):
+            return (-1, None, Done(UserJoinedChat(arg)))
+        else:
+            print(stage, data, arg)
+            raise Exception('Invalid create state for userJoinedChat')
 
 class IsReply (MessageHandler):
     def __init__(self, children):
@@ -39,6 +46,25 @@ class IsReply (MessageHandler):
             self.propagate(bot, message, target, exclude)
         else:
             raise FilterException()
+
+    @classmethod
+    def is_entrypoint(cls):
+        return True
+
+    @classmethod
+    def get_name(cls):
+        return "Message is reply"
+
+    @classmethod
+    def create(cls, stage, data, arg):
+        if stage is 0:
+            return (1, None, AskChildren())
+        elif stage is 1 and isinstance(arg, list):
+            return (-1, None, Done(IsReply(arg)))
+        else:
+            print(stage, data, arg)
+            raise Exception('Invalid create state for isReply')
+
 
 class CommandFilter (MessageHandler):
     def __init__(self, cmd, children):
@@ -53,15 +79,29 @@ class CommandFilter (MessageHandler):
                 return self.propagate(bot, message, target, exclude)
         raise FilterException()
 
-class InPrivateChat (MessageHandler):
-    def __init__(self, children):
-        super(InPrivateChat, self).__init__(children)
+    @classmethod
+    def is_entrypoint(cls):
+        return True
 
-    def call(self, bot, message, target, exclude):
-        if(message.chat.type == 'private'):
-            return self.propagate(bot, message, target, exclude)
+    @classmethod
+    def get_name(cls):
+        return "Message is command"
+
+    @classmethod
+    def create(cls, stage, data, arg):
+        if stage is 0:
+            return (1, None, Send("Please send me the command you want to filter on"))
+        elif stage is 1 and arg:
+            if not arg.text or not re.match(r'/[\w]+$', arg.text):
+                return (1, None, Send("Not a valid command"))
+            command = arg.text[1:]
+            return (2, command, AskChildren())
+        elif stage is 2 and isinstance(arg, list):
+            return (-1, None, Done(CommandFilter(data, arg)))
         else:
-            raise FilterException()
+            print(stage, data, arg)
+            raise Exception('Invalid create state for commandHandler')
+
 
 class SenderIsBotAdmin (MessageHandler):
     def __init__(self, children):
@@ -75,3 +115,21 @@ class SenderIsBotAdmin (MessageHandler):
             return self.propagate(bot, message, target, exclude)
         else:
             raise FilterException()
+
+    @classmethod
+    def is_entrypoint(cls):
+        return True
+
+    @classmethod
+    def get_name(cls):
+        return "Sender is bot admin"
+
+    @classmethod
+    def create(cls, stage, data, arg):
+        if stage is 0:
+            return (1, None, AskChildren())
+        elif stage is 1 and isinstance(arg, list):
+            return (-1, None, Done(SenderIsBotAdmin(arg)))
+        else:
+            print(stage, data, arg)
+            raise Exception('Invalid create state for SenderIsBotAdmin')

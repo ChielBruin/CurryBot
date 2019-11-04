@@ -46,7 +46,7 @@ class Cache(object):
                         Logger.log_error('Malformed cache, starting with a fresh cache')
                 else:
                     Logger.log_info('Cache file appears to be empty')
-                    self._cache = {}
+                    cls._cache = {}
         else:
             Logger.log_error('Cache file does not exist (This error can be ignored on the initial run)')
             cls._cache = {}

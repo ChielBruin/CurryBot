@@ -22,6 +22,15 @@ class PickWeighted (MessageHandler):
         print(rand, self.weights)
         raise Exception('Off by at least one in random selection')
 
+    @classmethod
+    def is_entrypoint(cls):
+        return False
+
+    @classmethod
+    def get_name(cls):
+        return "Pick weighted random from children"
+
+
 
 class PickUniform (MessageHandler):
     def __init__(self, children):
@@ -30,6 +39,15 @@ class PickUniform (MessageHandler):
     def call(self, bot, msg, target, exclude):
         index = random.randrange(len(self.children))
         return self.children[index].call(bot, msg, target, exclude)
+
+    @classmethod
+    def is_entrypoint(cls):
+        return False
+
+    @classmethod
+    def get_name(cls):
+        return "Pick uniform random from children"
+
 
 
 class Not (MessageHandler):
@@ -46,6 +64,15 @@ class Not (MessageHandler):
         except FilterException:
             return self.propagate(bot, msg, target, exclude)
 
+    @classmethod
+    def is_entrypoint(cls):
+        return True
+
+    @classmethod
+    def get_name(cls):
+        return "Not"
+
+
 
 class PercentageFilter (MessageHandler):
     def __init__(self, percentage, children):
@@ -58,6 +85,15 @@ class PercentageFilter (MessageHandler):
         else:
             raise FilterException()
 
+    @classmethod
+    def is_entrypoint(cls):
+        return False
+
+    @classmethod
+    def get_name(cls):
+        return "Filter out x% of messages"
+
+
 class Try (MessageHandler):
     def __init__(self, children, extend=[]):
         super(Try, self).__init__(children)
@@ -68,9 +104,18 @@ class Try (MessageHandler):
         for child in self.children:
             try:
                 return child.call(bot, message, target, copy.copy(exclude))
-            except Exception:
+            except FilterException:
                 continue
         raise FilterException()
+
+    @classmethod
+    def is_entrypoint(cls):
+        return False
+
+    @classmethod
+    def get_name(cls):
+        return "Try child, if fails continue to next"
+
 
 
 class Swallow (MessageHandler):
@@ -80,6 +125,23 @@ class Swallow (MessageHandler):
     def call(self, bot, msg, target, exclude):
         return []
 
+    @classmethod
+    def is_entrypoint(cls):
+        return False
+
+    @classmethod
+    def get_name(cls):
+        return "Do nothing"
+
+
 class Or (Try):
     def __init__(self, filters, children):
         super(Or, self).__init__(filters, extend=children)
+
+    @classmethod
+    def is_entrypoint(cls):
+        return False
+
+    @classmethod
+    def get_name(cls):
+        return "Or"

@@ -1,4 +1,6 @@
 from messageHandler import MessageHandler, RandomMessageHandler
+from configResponse import Send, Done, AskChildren
+import re
 
 
 class AbstractSendMessage (RandomMessageHandler):
@@ -31,19 +33,62 @@ class AbstractSendMessage (RandomMessageHandler):
     def has_effect():
         return True
 
+    @classmethod
+    def is_entrypoint(cls):
+        return False
+
+    @classmethod
+    def create(cls, stage, data, arg):
+        if stage is 0:
+            return (1, None, Send('Please send me the text to reply'))
+        elif stage is 1 and arg:
+            if not arg.text:
+                return (1, None, Send('Please reply with text, not with something else'))
+            return (2, arg.text, Send('Should previews be shown for URLs?'))
+        elif stage is 2 and arg:
+            if not arg.text or not re.match(r'yes|no', arg.text):
+                return (2, data, Send('Please reply with yes or no'))
+            return (-1, None, Done(cls._create(data, arg.text == 'yes')))
+        else:
+            print(stage, data, arg)
+            raise Exception('Invalid create state for sendTextMessage')
+
+
 class SendTextMessage (AbstractSendMessage):
     def __init__(self, message, show_preview=True):
         super(SendTextMessage, self).__init__(message, parse_mode=None, show_preview=show_preview)
 
+    @classmethod
+    def get_name(cls):
+        return 'Send a message'
+
+    @classmethod
+    def _create(cls, msg, show_preview):
+        return SendTextMessage(msg, show_preview)
 
 class SendMarkdownMessage (AbstractSendMessage):
     def __init__(self, message, show_preview=True):
         super(SendMarkdownMessage, self).__init__(message, parse_mode='Markdown', show_preview=show_preview)
 
+    @classmethod
+    def get_name(cls):
+        return "Send Markdown formatted message"
+
+    @classmethod
+    def _create(cls, msg, show_preview):
+        return SendMarkdownMessage(msg, show_preview)
 
 class SendHTMLMessage (AbstractSendMessage):
     def __init__(self, message, show_preview=True):
         super(SendHTMLMessage, self).__init__(message, parse_mode='HTML', show_preview=show_preview)
+
+    @classmethod
+    def get_name(cls):
+        return "Send HTML formatted message"
+
+    @classmethod
+    def _create(cls, msg, show_preview):
+        return SendHTMLMessage(msg, show_preview)
 
 
 class Forward (MessageHandler):
@@ -64,3 +109,11 @@ class Forward (MessageHandler):
             raise Exception('You cannot reply using a forwarded message')
         bot.forward_message(chat_id=msg.chat.id, from_chat_id=self.chat_id, message_id=self.msg_id)
         return [self.id]
+
+    @classmethod
+    def is_entrypoint(cls):
+        return False
+
+    @classmethod
+    def get_name(cls):
+        return "Forward a message"

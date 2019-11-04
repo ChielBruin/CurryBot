@@ -24,10 +24,24 @@ class AbstractRegexFilter (MessageHandler):
     def matcher(self, regex, text):
         raise Exception('Not implemented')
 
+    @classmethod
+    def is_entrypoint(cls):
+        return True
+
+
 class MatchFilter (AbstractRegexFilter):
     def matcher(self, regex, text):
         return re.match(self._regex, text)
 
+    @classmethod
+    def get_name(cls):
+        return "Match text with regex"
+
+
 class SearchFilter (AbstractRegexFilter):
     def matcher(self, regex, text):
         return re.search(self._regex, text)
+
+    @classmethod
+    def get_name(cls):
+        return "Search text for regex"

@@ -43,7 +43,20 @@ class SendRSS (MessageHandler):
     def has_effect():
         return True
 
+    @classmethod
+    def is_entrypoint(cls):
+        return False
+
+    @classmethod
+    def get_name(cls):
+        return "Send an item from an RSS feed"
+
+
 class SendReddit (SendRSS):
     def __init__(self, subreddit, show=['title', 'link'], index=0):
         url = 'https://www.reddit.com/r/%s.rss' % subreddit
         super(SendReddit, self).__init__(url, show=show, index=index)
+
+    @classmethod
+    def get_name(cls):
+        return "Send Reddit post"

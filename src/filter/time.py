@@ -43,3 +43,11 @@ class TimeFilter (MessageHandler):
             return self.propagate(bot, message, target, exclude)
         else:
             raise FilterException()
+
+    @classmethod
+    def is_entrypoint(cls):
+        return True
+
+    @classmethod
+    def get_name(cls):
+        return "Filter on time"
