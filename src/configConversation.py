@@ -51,12 +51,10 @@ class ConfigConversation (object):
         buttons.append([InlineKeyboardButton(text='Exit', callback_data=str(self.EXIT))])
         reply_markup = InlineKeyboardMarkup(buttons)
 
-        # Send message with text and appended InlineKeyboard
         message.reply_text(
             'Select a chat to configure',
             reply_markup=reply_markup
         )
-        # Tell ConversationHandler that we're in state `SELECT_ACTION` now
         return self.SELECT_CHAT
 
     def end(self, bot, update):

@@ -6,6 +6,7 @@ from logger import Logger
 class Config (object):
     chat_admins = {}
     chat_titles = {}
+    chat_keys = {}
 
     @classmethod
     def set_chat_title(cls, chat_id, title):
@@ -51,10 +52,27 @@ class Config (object):
                 yield chat_id
 
     @classmethod
+    def add_chat_key(cls, key, chat_id):
+        chat_id = str(chat_id)
+        if chat_id not in cls.chat_keys:
+            cls.chat_keys[chat_id] = [key]
+        elif key not in cls.chat_keys[chat_id]:
+            cls.chat_keys[chat_id].append(key)
+
+    @classmethod
+    def get_chat_keys(cls, chat_id):
+        chat_id = str(chat_id)
+        if chat_id not in cls.chat_keys:
+            return []
+        else:
+            return cls.chat_keys[chat_id]
+
+    @classmethod
     def store_config(cls):
         config = {
             'admins': cls.chat_admins,
-            'titles': cls.chat_titles
+            'titles': cls.chat_titles,
+            'keys'  : cls.chat_keys
         }
         with open(cls.config_location, 'w') as config_file:
             Logger.log_debug('Writing config to disk')
@@ -69,20 +87,23 @@ class Config (object):
                 if content:
                     try:
                         config = json.loads(content)
-                        if 'admins' not in config or 'titles' not in config:
+                        if 'admins' not in config or 'titles' not in config or 'keys' not in config:
                             raise Exception()
                     except:
                         print(content)
                         Logger.log_error('Malformed cache, starting with a fresh cache')
-                        config = {'admins' : {}, 'titles': {}}
+                        config = {'admins' : {}, 'titles': {}, 'keys': {}}
 
                     cls.chat_admins = config['admins']
                     cls.chat_titles = config['titles']
+                    cls.chat_keys   = config['keys']
                 else:
                     Logger.log_info('Config file appears to be empty')
                     cls.chat_admins = {}
                     cls.chat_titles = {}
+                    cls.chat_keys   = {}
         else:
             Logger.log_error('Config file does not exist (This error can be ignored on the initial run)')
             cls.chat_admins = {}
             cls.chat_titles = {}
+            cls.chat_keys   = {}
