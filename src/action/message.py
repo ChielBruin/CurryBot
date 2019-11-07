@@ -1,5 +1,5 @@
 from messageHandler import MessageHandler, RandomMessageHandler
-from configResponse import Send, Done, AskChildren
+from configResponse import Send, Done, AskChildren, CreateException
 import re
 
 
@@ -51,7 +51,7 @@ class AbstractSendMessage (RandomMessageHandler):
             return (-1, None, Done(cls._create(data, arg.text == 'yes')))
         else:
             print(stage, data, arg)
-            raise Exception('Invalid create state for sendTextMessage')
+            raise CreateException('Invalid create state for sendTextMessage')
 
 
 class SendTextMessage (AbstractSendMessage):

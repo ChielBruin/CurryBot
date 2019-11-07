@@ -12,3 +12,6 @@ class AskChildren (object):
 class Done (object):
     def __init__(self, handler):
         self.handler = handler
+
+class CreateException (Exception):
+    pass

@@ -6,7 +6,7 @@ from messageHandler import MessageHandler
 from exceptions     import FilterException
 from config         import Config
 
-from configResponse import Send, Done, AskChildren
+from configResponse import Send, Done, AskChildren, CreateException
 
 
 class UserJoinedChat (MessageHandler):
@@ -100,7 +100,7 @@ class CommandFilter (MessageHandler):
             return (-1, None, Done(CommandFilter(data, arg)))
         else:
             print(stage, data, arg)
-            raise Exception('Invalid create state for commandHandler')
+            raise CreateException('Invalid create state for commandHandler')
 
 
 class SenderIsBotAdmin (MessageHandler):

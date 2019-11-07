@@ -4,6 +4,7 @@ from telegram import Message, Chat
 from logger import Logger
 from cache import Cache
 from exceptions import FilterException
+from configResponse import CreateException
 
 class Handler (object):
     def __init__(self, children=[]):
@@ -56,7 +57,7 @@ class Handler (object):
 
     @classmethod
     def create(cls, stage, data, arg):
-        raise Exception('create not implemented for %s' % cls)
+        raise CreateException('create not implemented for %s' % cls)
 
 class MessageHandler (Handler):
     def call(self, bot, message, target):

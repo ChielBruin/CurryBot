@@ -4,7 +4,7 @@ from telegram.ext.filters import Filters
 
 from logger import Logger
 from config import Config
-import configResponse
+from configResponse import Send, Done, AskChildren, CreateException
 
 from filter.type     import IsReply, CommandFilter, SenderIsBotAdmin, UserJoinedChat
 from filter.composit import Try, Or, PickWeighted, PickUniform, PercentageFilter, Swallow
@@ -109,29 +109,35 @@ class ConfigConversation (object):
             return self.add_collect_children(bot, msg, user_data)
 
         (stage, data, idx) = user_data['stack'][-1]
-        (stage, data, res) = self.HANDLERS[idx].create(stage, data, arg)
-        user_data['stack'][-1] = (stage, data, idx)
+        try:
+            (stage, data, res) = self.HANDLERS[idx].create(stage, data, arg)
+            user_data['stack'][-1] = (stage, data, idx)
 
-        if isinstance(res, configResponse.Send):
-            self.send_or_edit(bot, user_data, msg, res.msg, res.buttons)
-            return self.ADD_HANDLER_STEP
-        elif isinstance(res, configResponse.Done):
-            user_data['acc'].append(res.handler)
-            user_data['stack'] = user_data['stack'][:-1]
-            return self.handle_stack(bot, msg, user_data, None)
+            if isinstance(res, Send):
+                self.send_or_edit(bot, user_data, msg, res.msg, res.buttons)
+                return self.ADD_HANDLER_STEP
+            elif isinstance(res, Done):
+                user_data['acc'].append(res.handler)
+                user_data['stack'] = user_data['stack'][:-1]
+                return self.handle_stack(bot, msg, user_data, None)
 
-        elif isinstance(res, configResponse.AskChildren):
-            user_data['acc'].append('CHILDREN')
-            user_data['stack'].append('CHILDREN')
-            buttons = InlineKeyboardMarkup([[
-                InlineKeyboardButton(text='Add a child', callback_data=str(self.ADD)),
-                InlineKeyboardButton(text='Pass', callback_data=str(self.SKIP))
-            ]])
-            self.send_or_edit(bot, user_data, msg, 'Do you want to add a child handler?', buttons)
-            return self.ADD_HANDLER_CHILDREN
-        else:
-            print('Unknown response:', res)
+            elif isinstance(res, AskChildren):
+                user_data['acc'].append('CHILDREN')
+                user_data['stack'].append('CHILDREN')
+                buttons = InlineKeyboardMarkup([[
+                    InlineKeyboardButton(text='Add a child', callback_data=str(self.ADD)),
+                    InlineKeyboardButton(text='Pass', callback_data=str(self.SKIP))
+                ]])
+                self.send_or_edit(bot, user_data, msg, 'Do you want to add a child handler?', buttons)
+                return self.ADD_HANDLER_CHILDREN
+            else:
+                print('Unknown response:', res)
+                return ConversationHandler.END
+        except CreateException as ex:
+            print(ex)
+            self.send_or_edit(bot, user_data, msg, 'Error while processing handler create event! Please report your steps to the developer', None)
             return ConversationHandler.END
+
 
     def add_handler_callback(self, bot, update, user_data):
         query = update.callback_query
