@@ -72,7 +72,7 @@ class RandomMessageHandler (MessageHandler):
     @staticmethod
     def get_random_id(length=8):
         letters = string.ascii_lowercase + string.ascii_uppercase
-        return ''.join(random.choice(letters) for i in range(length))
+        return '$' + ''.join(random.choice(letters) for i in range(length-1))
 
     def clear(self):
         Cache.clear(self._id)

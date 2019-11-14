@@ -33,19 +33,21 @@ class CurryBot (object):
         self.dispatcher.add_handler(TelegramMessageHandler(Filters.all,
                             (lambda bot, update, self=self: self.on_receive(bot, update))))
 
-    def register_message_handler(self, chat=None, handler=None):
+    def register_message_handler(self, chat=None, handler=None, name=None):
         if not handler:
             raise Exception('No handler provided when registering a handler')
+        if not name:
+            raise Exception('No name provided when registering a handler')
         if chat is None:
-            self._global_message_handlers.append(handler)
+            self._global_message_handlers.append((name, handler))
         else:
             if chat in self._chat_message_handlers:
-                self._chat_message_handlers[chat].append(handler)
+                self._chat_message_handlers[chat].append((name, handler))
             else:
-                self._chat_message_handlers[chat] = [handler]
+                self._chat_message_handlers[chat] = [(name, handler)]
 
-    def register_tick_handler(self, handler):
-        self._tick_handlers.append(handler)
+    def register_tick_handler(self, handler, name):
+        self._tick_handlers.append((name, handler))
 
     def on_receive(self, bot, update):
         chat = update.message.chat
@@ -76,30 +78,30 @@ class CurryBot (object):
                 Logger.log_exception(ex, msg='Exception while handling message')
                 traceback.print_exc()
 
-        for handler in self._global_message_handlers:
+        for (_, handler) in self._global_message_handlers:
             call_handler(handler, bot, message)
 
         chat_id = message.chat.id
         if chat_id in self._chat_message_handlers:
-            for handler in self._chat_message_handlers[chat_id]:
+            for (_, handler) in self._chat_message_handlers[chat_id]:
                 call_handler(handler, bot, message)
 
     def on_receive_tick(self, bot, job):
         try:
             time = datetime.now()
-            for handler in self._tick_handlers:
+            for (_, handler) in self._tick_handlers:
                 handler.call(bot, time)
         except Exception as ex:
             Logger.log_exception(ex, msg='This exception should never occur')
 
     def update_cache(self):
         Logger.log_debug('Updating cache')
-        for handler in self._global_message_handlers:
+        for (_, handler) in self._global_message_handlers:
             handler.update()
         for chat in self._chat_message_handlers:
-            for handler in self._chat_message_handlers[chat]:
+            for (_, handler) in self._chat_message_handlers[chat]:
                 handler.update()
-        for handler in self._tick_handlers:
+        for (_, handler) in self._tick_handlers:
             handler.update()
         Cache.store_cache()
         Config.store_config()
@@ -108,6 +110,16 @@ class CurryBot (object):
         Logger.log_info(msg='Shutting down')
         Cache.store_cache()
         Config.store_config()
+
+    def has_handler_with_name(self, new_name):
+        for (name, _) in self._global_message_handlers:
+            if name == new_name:
+                return True
+        for chat in self._chat_message_handlers:
+            for (name, _) in self._chat_message_handlers[chat]:
+                if name == new_name:
+                    return True
+        return False
 
     def start(self):
         '''

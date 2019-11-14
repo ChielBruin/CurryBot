@@ -6,7 +6,7 @@ from messageHandler import MessageHandler
 from exceptions     import FilterException
 from config         import Config
 
-from configResponse import Send, Done, AskChildren, CreateException
+from configResponse import Send, Done, AskChild, NoChild, CreateException
 
 
 class UserJoinedChat (MessageHandler):
@@ -30,12 +30,15 @@ class UserJoinedChat (MessageHandler):
     @classmethod
     def create(cls, stage, data, arg):
         if stage is 0:
-            return (1, None, AskChildren())
-        elif stage is 1 and isinstance(arg, list):
-            return (-1, None, Done(UserJoinedChat(arg)))
+            return (1, [], AskChild())
+        elif stage is 1 and isinstance(arg, MessageHandler):
+            data.append(arg)
+            return (1, data, AskChild())
+        elif stage is 1 and isinstance(arg, NoChild):
+            return (-1, None, Done(UserJoinedChat(data)))
         else:
             print(stage, data, arg)
-            raise Exception('Invalid create state for userJoinedChat')
+            raise CreateException('Invalid create state for userJoinedChat')
 
 class IsReply (MessageHandler):
     def __init__(self, children):
@@ -58,12 +61,15 @@ class IsReply (MessageHandler):
     @classmethod
     def create(cls, stage, data, arg):
         if stage is 0:
-            return (1, None, AskChildren())
-        elif stage is 1 and isinstance(arg, list):
-            return (-1, None, Done(IsReply(arg)))
+            return (1, [], AskChild())
+        elif stage is 1 and isinstance(arg, MessageHandler):
+            data.append(arg)
+            return (1, data, AskChild())
+        elif stage is 1 and isinstance(arg, NoChild):
+            return (-1, None, Done(IsReply(data)))
         else:
             print(stage, data, arg)
-            raise Exception('Invalid create state for isReply')
+            raise CreateException('Invalid create state for isReply')
 
 
 class CommandFilter (MessageHandler):
@@ -95,9 +101,13 @@ class CommandFilter (MessageHandler):
             if not arg.text or not re.match(r'/[\w]+$', arg.text):
                 return (1, None, Send("Not a valid command"))
             command = arg.text[1:]
-            return (2, command, AskChildren())
-        elif stage is 2 and isinstance(arg, list):
-            return (-1, None, Done(CommandFilter(data, arg)))
+            return (2, (command, []), AskChild())
+        elif stage is 2 and isinstance(arg, MessageHandler):
+            data[1].append(arg)
+            return (2, data, AskChild())
+        elif stage is 2 and isinstance(arg, NoChild):
+            (command, children) = data
+            return (-1, None, Done(CommandFilter(command, children)))
         else:
             print(stage, data, arg)
             raise CreateException('Invalid create state for commandHandler')
@@ -127,9 +137,15 @@ class SenderIsBotAdmin (MessageHandler):
     @classmethod
     def create(cls, stage, data, arg):
         if stage is 0:
-            return (1, None, AskChildren())
-        elif stage is 1 and isinstance(arg, list):
-            return (-1, None, Done(SenderIsBotAdmin(arg)))
+            return (1, None, AskChild())
+        elif stage is 1 and isinstance(arg, MessageHandler):
+            if data is None:
+                data = [arg]
+            else:
+                data.append(arg)
+            return (1, data, AskChild())
+        elif stage is 1 and isinstance(arg, NoChild):
+            return (-1, None, Done(SenderIsBotAdmin(data)))
         else:
             print(stage, data, arg)
-            raise Exception('Invalid create state for SenderIsBotAdmin')
+            raise CreateException('Invalid create state for SenderIsBotAdmin')

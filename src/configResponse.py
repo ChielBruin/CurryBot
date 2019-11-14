@@ -6,7 +6,13 @@ class Send (object):
         self.msg = msg if msg else ''
         self.buttons = InlineKeyboardMarkup(buttons) if buttons else None
 
-class AskChildren (object):
+class AskChild (object):
+    pass
+
+class NoChild (object):
+    pass
+
+class AskCacheKey (object):
     pass
 
 class Done (object):

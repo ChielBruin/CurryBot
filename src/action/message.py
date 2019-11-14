@@ -1,5 +1,5 @@
 from messageHandler import MessageHandler, RandomMessageHandler
-from configResponse import Send, Done, AskChildren, CreateException
+from configResponse import Send, Done, AskChild, CreateException
 import re
 
 

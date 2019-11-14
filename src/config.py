@@ -60,6 +60,13 @@ class Config (object):
             cls.chat_keys[chat_id].append(key)
 
     @classmethod
+    def has_chat_key(cls, key):
+        for chat_id in cls.chat_keys:
+            if key in cls.chat_keys[chat_id]:
+                return True
+        return False
+
+    @classmethod
     def get_chat_keys(cls, chat_id):
         chat_id = str(chat_id)
         if chat_id not in cls.chat_keys:

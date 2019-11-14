@@ -1,10 +1,11 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, ConversationHandler, MessageHandler
 from telegram.ext.filters import Filters
+import traceback
 
 from logger import Logger
 from config import Config
-from configResponse import Send, Done, AskChildren, CreateException
+from configResponse import Send, Done, AskChild, NoChild, AskCacheKey, CreateException
 
 from filter.type     import IsReply, CommandFilter, SenderIsBotAdmin, UserJoinedChat
 from filter.composit import Try, Or, PickWeighted, PickUniform, PercentageFilter, Swallow
@@ -14,6 +15,7 @@ from action.message  import SendTextMessage, SendMarkdownMessage, SendHTMLMessag
 from action.util     import MakeSenderAdmin
 from action.sticker  import SendSticker
 from action.flickr   import SendFlickr
+from action.activity import MonitorChatActivity, MonitorUserActivity
 from application.type import SwapReply, ParameterizeText
 
 
@@ -27,10 +29,11 @@ class ConfigConversation (object):
         MakeSenderAdmin,
         SendSticker,
         SendFlickr,
-        SwapReply, ParameterizeText
+        SwapReply, ParameterizeText,
+        MonitorChatActivity, MonitorUserActivity
     ]
 
-    SELECT_CHAT, SELECT_ACTION, ADD_HANDLER_STEP, ADD_HANDLER_CHILDREN = range(4)
+    SELECT_CHAT, SELECT_ACTION, ADD_HANDLER_STEP, ADD_HANDLER_INITIAL, ADD_HANDLER_CHILD, ADD_HANDLER_CACHE_KEY = range(6)
     EXIT, ADD, EDIT, REMOVE, COPY, SKIP = range(6)
 
     def __init__ (self, bot):
@@ -38,7 +41,7 @@ class ConfigConversation (object):
 
     def start(self, bot, update, user_data):
         user_data['stack'] = []
-        user_data['acc'] = []
+        user_data['acc'] = None
         user_data['user_msg'] = False
         user = update.message.from_user
         message = update.message
@@ -67,84 +70,169 @@ class ConfigConversation (object):
         )
         return ConversationHandler.END
 
+    def add_start(self, bot, update, user_data):
+        self.send_or_edit(bot, user_data, update.callback_query.message, "Please send me a name for the new handler")
+        return self.ADD_HANDLER_INITIAL
+
     def add_initial(self, bot, update, user_data):
         '''
         Add a handler to the current chat
         '''
-        if user_data['stack'] == []:
-            message = 'Select a filter for the new action'
-            handlers = map(lambda x: (x[0], x[1].get_name()), filter(lambda x: x[1].is_entrypoint(), enumerate(self.HANDLERS)))
+        user_data['user_msg'] = True
+        if update.message.text:
+            name = update.message.text
+            if not self.bot.has_handler_with_name(name):
+                user_data['name'] = name
+                message = 'Select a filter for \'%s\'' % name
+                handlers = map(lambda x: (x[0], x[1].get_name()), filter(lambda x: x[1].is_entrypoint(), enumerate(self.HANDLERS)))
+
+                buttons = [
+                 [InlineKeyboardButton(text=desc, callback_data=str(id))] for (id, desc) in handlers
+                ]
+
+                self.send_or_edit(bot, user_data, update.message, message, buttons)
+                return self.ADD_HANDLER_STEP
+            else:
+                self.send_or_edit(bot, user_data, update.message, "Name already in use. Please send an other one")
+                return self.ADD_HANDLER_INITIAL
         else:
-            message = 'Select a child handler'
-            handlers = map(lambda x: (x[0], x[1].get_name()), enumerate(self.HANDLERS))
+            message = 'Invalid name. It must contain text'
+            self.send_or_edit(bot, user_data, update.message, message, buttons)
+            return self.ADD_HANDLER_INITIAL
 
-        buttons = [
-         [InlineKeyboardButton(text=desc, callback_data=str(id))] for (id, desc) in handlers
-        ]
-        reply_markup = InlineKeyboardMarkup(buttons)
-
-        query = update.callback_query
-        bot.edit_message_text(
-            chat_id=query.message.chat_id,
-            message_id=query.message.message_id,
-            text=message,
-            reply_markup=reply_markup
-        )
-        return self.ADD_HANDLER_STEP
-
-    def add_handler_step(self, bot, msg, user_data, arg=None):
-        return self.handle_stack(bot, msg, user_data, arg)
-
-    def handle_stack(self, bot, msg, user_data, arg):
+    def handle_stack(self, bot, msg, user_data):
         stack = user_data['stack']
         if len(stack) is 0:
-            self.bot.register_message_handler(chat=int(user_data['chat_id']), handler=user_data['acc'][-1])
+            self.bot.register_message_handler(chat=int(user_data['chat_id']), name=user_data['name'], handler=user_data['acc'])
             self.send_or_edit(bot, user_data, msg, 'Hander added!', None)
             return ConversationHandler.END
 
-        if stack[-1] == 'CHILDREN':
-            user_data['stack'] = stack[:-1]
-            return self.add_collect_children(bot, msg, user_data)
-
-        (stage, data, idx) = user_data['stack'][-1]
+        (stage, data, idx) = stack[-1]
         try:
-            (stage, data, res) = self.HANDLERS[idx].create(stage, data, arg)
-            user_data['stack'][-1] = (stage, data, idx)
+            current = self.HANDLERS[idx]
+            (stage, data, res) = current.create(stage, data, user_data['acc'])
+            stack[-1] = (stage, data, idx)
+            user_data['acc'] = None
 
             if isinstance(res, Send):
                 self.send_or_edit(bot, user_data, msg, res.msg, res.buttons)
                 return self.ADD_HANDLER_STEP
             elif isinstance(res, Done):
-                user_data['acc'].append(res.handler)
+                user_data['acc'] = res.handler
                 user_data['stack'] = user_data['stack'][:-1]
-                return self.handle_stack(bot, msg, user_data, None)
+                return self.handle_stack(bot, msg, user_data)
 
-            elif isinstance(res, AskChildren):
-                user_data['acc'].append('CHILDREN')
-                user_data['stack'].append('CHILDREN')
-                buttons = InlineKeyboardMarkup([[
-                    InlineKeyboardButton(text='Add a child', callback_data=str(self.ADD)),
-                    InlineKeyboardButton(text='Pass', callback_data=str(self.SKIP))
-                ]])
-                self.send_or_edit(bot, user_data, msg, 'Do you want to add a child handler?', buttons)
-                return self.ADD_HANDLER_CHILDREN
+            elif isinstance(res, AskChild):
+                name = current.get_name()
+                message = 'Do you want to add a child handler for \'%s\'' % name
+                buttons = [[
+                    InlineKeyboardButton(text='yes', callback_data='-2'),
+                    InlineKeyboardButton(text='no', callback_data='-1')
+                ]]
+
+                self.send_or_edit(bot, user_data, msg, message, buttons)
+                return self.ADD_HANDLER_CHILD
+
+            elif isinstance(res, AskCacheKey):
+                user_keys = []
+                for chat_id in Config.get_admin_chats(msg.from_user.id):
+                    user_keys.extend(Config.get_chat_keys(chat_id))
+
+                buttons = [
+                    [InlineKeyboardButton(text='Create own key', callback_data=str(self.ADD))],
+                    [InlineKeyboardButton(text='Use existing key', callback_data=str(self.COPY))]
+                ]
+
+                self.send_or_edit(bot, user_data, msg, 'Select a cache key, or create a new one', buttons)
+                return self.ADD_HANDLER_CACHE_KEY
             else:
-                print('Unknown response:', res)
-                return ConversationHandler.END
+                raise Exception('Unknown response: %s' % res)
         except CreateException as ex:
-            print(ex)
+            traceback.print_exc()
+            self.send_or_edit(bot, user_data, msg, 'Implementation missing! Please report your steps to the developer', None)
+            return ConversationHandler.END
+        except Exception as ex:
+            traceback.print_exc()
             self.send_or_edit(bot, user_data, msg, 'Error while processing handler create event! Please report your steps to the developer', None)
             return ConversationHandler.END
-
 
     def add_handler_callback(self, bot, update, user_data):
         query = update.callback_query
         user_data['stack'].append( (0, None, int(query.data)) )
-        return self.add_handler_step(bot, query.message, user_data)
+        return self.handle_stack(bot, query.message, user_data)
 
     def add_handler_message(self, bot, update, user_data):
         user_data['user_msg'] = True
-        return self.add_handler_step(bot, update.message, user_data, arg=update.message)
+        user_data['acc'] = update.message
+        return self.handle_stack(bot, update.message, user_data)
+
+    def add_handler_no_child_callback(self, bot, update, user_data):
+        user_data['acc'] = NoChild()
+        return self.handle_stack(bot, update.callback_query.message, user_data)
+
+    def add_handler_select_child_callback(self, bot, update, user_data):
+        stack = user_data['stack']
+        current_idx = stack[-1][2]
+        message = 'Select a handler for %s' % self.HANDLERS[current_idx].get_name()
+        handlers = map(lambda x: (x[0], x[1].get_name()), filter(lambda x: not x[0] is current_idx, enumerate(self.HANDLERS)))
+
+        buttons = [
+         [InlineKeyboardButton(text=desc, callback_data=str(id))] for (id, desc) in handlers
+        ]
+
+        self.send_or_edit(bot, user_data, update.callback_query.message, message, buttons)
+        return self.ADD_HANDLER_CHILD
+
+    def add_handler_select_cache_key_callback(self, bot, update, user_data):
+        stack = user_data['stack']
+        current_idx = stack[-1][2]
+        user_id = update.callback_query.from_user.id
+
+        keys = [key for chat_id in Config.get_admin_chats(user_id) for key in Config.get_chat_keys(chat_id)]
+
+        if len(keys) is 0:
+            message = 'You do not have access to any existing keys, please send me a valid key'
+            buttons = None
+
+        else:
+            message = 'Select a key'
+            buttons = [[InlineKeyboardButton(text=key, callback_data='0_' + str(key))] for key in keys]
+
+        self.send_or_edit(bot, user_data, update.callback_query.message, message, buttons)
+        return self.ADD_HANDLER_CACHE_KEY
+
+    def add_handler_new_cache_key_callback(self, bot, update, user_data):
+        message = 'Please send me a cache key to use (max length is 32)'
+        buttons = None
+        self.send_or_edit(bot, user_data, update.callback_query.message, message, buttons)
+        return self.ADD_HANDLER_CACHE_KEY
+
+    def add_handler_cache_key_msg(self, bot, update, user_data):
+        user_data['user_msg'] = True
+        if update.message.text:
+            key = update.message.text
+            try:
+                if Config.has_chat_key(key) or len(key) >= 32 or key.startswith('$'):
+                    message = 'Invalid key. Either it is already in use, starts with a $, or it is too long'
+                    buttons = None
+                    self.send_or_edit(bot, user_data, update.message, message, buttons)
+                    return self.ADD_HANDLER_CACHE_KEY
+                else:
+                    user_data['acc'] = key
+                    Config.add_chat_key(key, user_data['chat_id'])
+                    return self.handle_stack(bot, update.message, user_data)
+            except Exception as ex:
+                print(ex)
+        else:
+            message = 'Invalid key. It must contain text'
+            buttons = None
+            self.send_or_edit(bot, user_data, update.message, message, buttons)
+            return self.ADD_HANDLER_CACHE_KEY
+
+    def add_handler_cache_key_callback(self, bot, update, user_data):
+        query = update.callback_query
+        user_data['acc'] = query.data[2:]
+        return self.handle_stack(bot, query.message, user_data)
 
     def edit_chat(self, bot, update, user_data):
         query = update.callback_query
@@ -154,11 +242,11 @@ class ConfigConversation (object):
 
         buttons = [[
             InlineKeyboardButton(text='Add a handler', callback_data=str(self.ADD)),
-            InlineKeyboardButton(text='Remove handler', callback_data=str(self.REMOVE))
+            # InlineKeyboardButton(text='Remove handler', callback_data=str(self.REMOVE))
             ],[
-            InlineKeyboardButton(text='Edit a handler', callback_data=str(self.EDIT)),
-            InlineKeyboardButton(text='Copy a handler', callback_data=str(self.COPY))
-            ],[
+            # InlineKeyboardButton(text='Edit a handler', callback_data=str(self.EDIT)),
+            # InlineKeyboardButton(text='Copy a handler', callback_data=str(self.COPY))
+            # ],[
             InlineKeyboardButton(text='Exit', callback_data=str(self.EXIT))
         ]]
 
@@ -170,21 +258,6 @@ class ConfigConversation (object):
         )
         return self.SELECT_ACTION
 
-    def add_collect_children(self, bot, update, user_data):
-        children = []
-        acc = []
-        done = False
-        for handler in reversed(user_data['acc']):
-            if handler == 'CHILDREN' and not done:
-                done = True
-            if done:
-                acc.append(handler)
-            else:
-                children.append(handler)
-        user_data['acc'] = list(reversed(acc))
-        msg = update.callback_query.message if hasattr(update, 'callback_query') else update
-        return self.handle_stack(bot, msg, user_data, list(reversed(children)))
-
     def get_conversation_handler(self):
         conv_handler = ConversationHandler(
             entry_points=[CommandHandler('config', self.start, pass_user_data=True)],
@@ -195,36 +268,52 @@ class ConfigConversation (object):
                 ],
                 self.SELECT_ACTION: [
                     CallbackQueryHandler(self.end, pattern='^%s$' % self.EXIT),
-                    CallbackQueryHandler(self.add_initial, pattern='^%s$' % self.ADD, pass_user_data=True),
+                    CallbackQueryHandler(self.add_start, pattern='^%s$' % self.ADD, pass_user_data=True),
                     # CallbackQueryHandler(self.edit, pattern='^%s$' % self.EDIT, pass_user_data=True),
                     # CallbackQueryHandler(self.remove, pattern='^%s$' % self.REMOVE, pass_user_data=True),
                     # CallbackQueryHandler(self.copy, pattern='^%s$' % self.COPY, pass_user_data=True)
+                ],
+                self.ADD_HANDLER_INITIAL: [
+                    MessageHandler(Filters.all, self.add_initial, pass_user_data=True)
                 ],
                 self.ADD_HANDLER_STEP: [
                     CallbackQueryHandler(self.add_handler_callback, pattern='^[0-9]+$', pass_user_data=True),
                     MessageHandler(Filters.all, self.add_handler_message, pass_user_data=True)
                 ],
-                self.ADD_HANDLER_CHILDREN: [
-                    CallbackQueryHandler(self.add_initial, pattern='^%d$' % self.ADD, pass_user_data=True),
-                    CallbackQueryHandler(self.add_collect_children, pattern='^%d$' % self.SKIP, pass_user_data=True)
+                self.ADD_HANDLER_CHILD: [
+                    CallbackQueryHandler(self.add_handler_no_child_callback, pattern='^-1$', pass_user_data=True),
+                    CallbackQueryHandler(self.add_handler_select_child_callback, pattern='^-2$', pass_user_data=True),
+                    CallbackQueryHandler(self.add_handler_callback, pattern='^[0-9]+$', pass_user_data=True)
+                ],
+                self.ADD_HANDLER_CACHE_KEY: [
+                    CallbackQueryHandler(self.add_handler_cache_key_callback, pattern='^0_.+$', pass_user_data=True),
+                    CallbackQueryHandler(self.add_handler_new_cache_key_callback, pattern='^%s$' % self.ADD, pass_user_data=True),
+                    CallbackQueryHandler(self.add_handler_select_cache_key_callback, pattern='^%s$' % self.COPY, pass_user_data=True),
+                    MessageHandler(Filters.all, self.add_handler_cache_key_msg, pass_user_data=True)
                 ]
             },
             fallbacks=[]
         )
         return conv_handler
 
-    def send_or_edit(self, bot, data, original, message, buttons):
-        if data['user_msg']:
-            bot.send_message(
-                chat_id=original.chat_id,
-                reply_markup=buttons,
-                text=message
-            )
-        else:
-            bot.edit_message_text(
-                chat_id=original.chat_id,
-                message_id=original.message_id,
-                reply_markup=buttons,
-                text=message
-            )
+    def send_or_edit(self, bot, data, original, message, buttons=None):
+        buttons = None if buttons is None else InlineKeyboardMarkup(buttons)
+        try:
+            if data['user_msg']:
+                bot.send_message(
+                    chat_id=original.chat_id,
+                    reply_markup= buttons,
+                    text=message
+                )
+            else:
+                bot.edit_message_text(
+                    chat_id=original.chat_id,
+                    message_id=original.message_id,
+                    reply_markup=buttons,
+                    text=message
+                )
+        except Exception as e:
+            print('except:', dir(e))
+            import traceback
+            traceback.print_exc()
         data['user_msg'] = False
