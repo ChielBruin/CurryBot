@@ -8,7 +8,7 @@ from config import Config
 from configResponse import Send, Done, AskChild, NoChild, AskCacheKey, CreateException
 
 from filter.type     import IsReply, CommandFilter, SenderIsBotAdmin, UserJoinedChat
-from filter.composit import Try, Or, PickWeighted, PickUniform, PercentageFilter, Swallow
+from filter.composit import Try, PickWeighted, PickUniform, PercentageFilter, Swallow
 from filter.regex    import MatchFilter, SearchFilter
 from filter.time     import TimeFilter
 from action.message  import SendTextMessage, SendMarkdownMessage, SendHTMLMessage
@@ -22,7 +22,7 @@ from application.type import SwapReply, ParameterizeText
 class ConfigConversation (object):
     HANDLERS = [
         IsReply, CommandFilter, SenderIsBotAdmin, UserJoinedChat,
-        Try, Or, PickWeighted, PickUniform, PercentageFilter, Swallow,
+        Try, PickWeighted, PickUniform, PercentageFilter, Swallow,
         MatchFilter, SearchFilter,
         TimeFilter,
         SendTextMessage, SendMarkdownMessage, SendHTMLMessage,
@@ -134,10 +134,7 @@ class ConfigConversation (object):
                 return self.ADD_HANDLER_CHILD
 
             elif isinstance(res, AskCacheKey):
-                user_keys = []
-                for chat_id in Config.get_admin_chats(msg.from_user.id):
-                    user_keys.extend(Config.get_chat_keys(chat_id))
-
+                user_data['acc'] = res.is_local
                 buttons = [
                     [InlineKeyboardButton(text='Create own key', callback_data=str(self.ADD))],
                     [InlineKeyboardButton(text='Use existing key', callback_data=str(self.COPY))]
@@ -188,7 +185,11 @@ class ConfigConversation (object):
         current_idx = stack[-1][2]
         user_id = update.callback_query.from_user.id
 
-        keys = [key for chat_id in Config.get_admin_chats(user_id) for key in Config.get_chat_keys(chat_id)]
+        if user_data['acc']:    # If is_local
+            chat_id = user_data['chat_id']
+            keys = [key for key in Config.get_chat_keys(chat_id)]
+        else:
+            keys = [key for chat_id in Config.get_admin_chats(user_id) for key in Config.get_chat_keys(chat_id)]
 
         if len(keys) is 0:
             message = 'You do not have access to any existing keys, please send me a valid key'

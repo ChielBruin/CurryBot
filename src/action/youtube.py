@@ -5,54 +5,29 @@ from google.oauth2.credentials import Credentials
 
 import json
 import datetime
+import re
 
-from action.action import Action
+from messageHandler import MessageHandler
 from logger import Logger
 from cache import Cache
+from configResponse import Send, Done, AskChild, NoChild, CreateException
 
 
-class YtPlaylistAppendAction (Action):
-    def __init__(self, id, api_key, playlist, index=0):
-        super(YtPlaylistAppendAction, self).__init__(id)
-        self.index = index
+class YtPlaylistAppend (MessageHandler):
+    def __init__(self, key_key, playlist):
+        super(YtPlaylistAppend, self).__init__([])
         self.playlist = playlist
-        (self.credentials, self.youtube) = self.authorize(api_key)
-        self.update()
+        self.authorize(key_key)
 
-    def encode_credentials(self, obj):
-        if isinstance(obj, datetime.datetime):
-            return obj.timestamp()
-        return json.JSONEncoder.default(self, obj)
-
-    def authorize(self, secret_file):
+    def authorize(self, key):
         Logger.log_debug('Authorizing youtube API')
         try:
-            c_json = Cache.shared_get_cache_encrypted(self.id)
-            api_service_name = "youtube"
-            api_version = "v3"
+            api_service_name = 'youtube'
+            api_version = 'v3'
 
-            if c_json is None:
-                scopes = ["https://www.googleapis.com/auth/youtube.force-ssl"]
-
-                flow = google_auth_oauthlib.flow.InstalledAppFlow.from_client_secrets_file(
-                    secret_file, scopes)
-                credentials = flow.run_console()
-            else:
-                Logger.log_debug('Using cached credentials')
-                c_dict = json.loads(c_json)
-                credentials = Credentials(
-                                token=c_dict['token'],
-                                refresh_token=c_dict['_refresh_token'],
-                                token_uri=c_dict['_token_uri'],
-                                client_id=c_dict['_client_id'],
-                                client_secret=c_dict['_client_secret'],
-                                scopes=c_dict['_scopes'])
-                credentials.expiry = datetime.datetime.fromtimestamp(c_dict['expiry'])
-
-            youtube = googleapiclient.discovery.build(
-                api_service_name, api_version, credentials=credentials)
-            return (credentials, youtube)
-
+            self.youtube = googleapiclient.discovery.build(
+                api_service_name, api_version, developerKey = Cache.get(key, encrypted=True)
+            )
         except Exception as ex:
             Logger.log_exception(ex, msg='Error while authorizing Youtube API')
 
@@ -63,7 +38,7 @@ class YtPlaylistAppendAction (Action):
         body={
           'snippet': {
             'playlistId': self.playlist,
-            'position': self.index,
+            'position': 0,
             'resourceId': {
               'kind': 'youtube#video',
               'videoId': video_id
@@ -73,14 +48,29 @@ class YtPlaylistAppendAction (Action):
         )
         response = request.execute()
 
-    def update(self):
-        credentials_json = json.dumps(self.credentials.__dict__, default=self.encode_credentials)
-        Cache.shared_put_cache_encrypted(self.id, credentials_json)
-
-    def dispatch(self, bot, msg, exclude):
+    def call(self, bot, msg, reply_to, exclude):
         self._playlist_add(msg.text)
         return []
 
-    def dispatch_reply(self, bot, msg, reply_to, exclude):
-        self._playlist_add(msg.text)
-        return []
+    @classmethod
+    def is_entrypoint(cls):
+        return False
+
+    @classmethod
+    def get_name(cls):
+        return "Add video to Youtube playlist"
+
+    @classmethod
+    def create(cls, stage, data, arg):
+        if stage is 0:
+            return (1, None, Send('What is the id of the YouTube playlist?'))
+        elif stage is 1 and arg:
+            if arg.text and re.matches(r'[A-Za-z0-9_-]{5,}', arg.text):
+                return (2, arg.text, AskCacheKey(is_local=True))
+            else:
+                return (1, None, Send('Invalid id, please try again'))
+        elif stage is 2 and arg:
+            return (-1, None, Done(YtPlaylistAppend(arg, data)))
+        else:
+            print(stage, data, arg)
+            raise CreateException('Invalid create state for userJoinedChat')
