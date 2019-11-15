@@ -5,7 +5,8 @@ import traceback
 
 from logger import Logger
 from config import Config
-from configResponse import Send, Done, AskChild, NoChild, AskCacheKey, CreateException
+from cache import Cache
+from configResponse import Send, Done, AskChild, NoChild, AskCacheKey, AskAPIKey, CreateException
 
 from filter.type     import IsReply, CommandFilter, SenderIsBotAdmin, UserJoinedChat
 from filter.composit import Try, PickWeighted, PickUniform, PercentageFilter, Swallow
@@ -17,6 +18,7 @@ from action.sticker  import SendSticker
 from action.flickr   import SendFlickr
 from action.activity import MonitorChatActivity, MonitorUserActivity
 from application.type import SwapReply, ParameterizeText
+from action.youtube   import YtPlaylistAppend
 
 
 class ConfigConversation (object):
@@ -29,11 +31,12 @@ class ConfigConversation (object):
         MakeSenderAdmin,
         SendSticker,
         SendFlickr,
+        YtPlaylistAppend,
         SwapReply, ParameterizeText,
         MonitorChatActivity, MonitorUserActivity
     ]
 
-    SELECT_CHAT, SELECT_ACTION, ADD_HANDLER_STEP, ADD_HANDLER_INITIAL, ADD_HANDLER_CHILD, ADD_HANDLER_CACHE_KEY = range(6)
+    SELECT_CHAT, SELECT_ACTION, ADD_HANDLER_STEP, ADD_HANDLER_INITIAL, ADD_HANDLER_CHILD, ADD_HANDLER_CACHE_KEY, ADD_HANDLER_API_KEY = range(7)
     EXIT, ADD, EDIT, REMOVE, COPY, SKIP = range(6)
 
     def __init__ (self, bot):
@@ -134,7 +137,6 @@ class ConfigConversation (object):
                 return self.ADD_HANDLER_CHILD
 
             elif isinstance(res, AskCacheKey):
-                user_data['acc'] = res.is_local
                 buttons = [
                     [InlineKeyboardButton(text='Create own key', callback_data=str(self.ADD))],
                     [InlineKeyboardButton(text='Use existing key', callback_data=str(self.COPY))]
@@ -142,6 +144,16 @@ class ConfigConversation (object):
 
                 self.send_or_edit(bot, user_data, msg, 'Select a cache key, or create a new one', buttons)
                 return self.ADD_HANDLER_CACHE_KEY
+
+            elif isinstance(res, AskAPIKey):
+                user_data['acc'] = None
+                buttons = [
+                    [InlineKeyboardButton(text='Create own API key', callback_data=str(self.ADD))],
+                    [InlineKeyboardButton(text='Use existing API key', callback_data=str(self.COPY))]
+                ]
+
+                self.send_or_edit(bot, user_data, msg, 'Select an API key, or create a new one', buttons)
+                return self.ADD_HANDLER_API_KEY
             else:
                 raise Exception('Unknown response: %s' % res)
         except CreateException as ex:
@@ -185,12 +197,7 @@ class ConfigConversation (object):
         current_idx = stack[-1][2]
         user_id = update.callback_query.from_user.id
 
-        if user_data['acc']:    # If is_local
-            chat_id = user_data['chat_id']
-            keys = [key for key in Config.get_chat_keys(chat_id)]
-        else:
-            keys = [key for chat_id in Config.get_admin_chats(user_id) for key in Config.get_chat_keys(chat_id)]
-
+        keys = [key for chat_id in Config.get_admin_chats(user_id) for key in Config.get_chat_keys(chat_id)]
         if len(keys) is 0:
             message = 'You do not have access to any existing keys, please send me a valid key'
             buttons = None
@@ -211,15 +218,16 @@ class ConfigConversation (object):
     def add_handler_cache_key_msg(self, bot, update, user_data):
         user_data['user_msg'] = True
         if update.message.text:
-            key = update.message.text
+            key = update.message.text.strip()
             try:
-                if Config.has_chat_key(key) or len(key) >= 32 or key.startswith('$'):
+                if Cache.contains(key) or len(key) >= 32 or key.startswith('$'):
                     message = 'Invalid key. Either it is already in use, starts with a $, or it is too long'
                     buttons = None
                     self.send_or_edit(bot, user_data, update.message, message, buttons)
                     return self.ADD_HANDLER_CACHE_KEY
                 else:
                     user_data['acc'] = key
+                    Cache.put(key, None)
                     Config.add_chat_key(key, user_data['chat_id'])
                     return self.handle_stack(bot, update.message, user_data)
             except Exception as ex:
@@ -230,10 +238,68 @@ class ConfigConversation (object):
             self.send_or_edit(bot, user_data, update.message, message, buttons)
             return self.ADD_HANDLER_CACHE_KEY
 
-    def add_handler_cache_key_callback(self, bot, update, user_data):
+    def add_handler_key_callback(self, bot, update, user_data):
         query = update.callback_query
         user_data['acc'] = query.data[2:]
         return self.handle_stack(bot, query.message, user_data)
+
+    def add_handler_select_api_key_callback(self, bot, update, user_data):
+        try:
+            stack = user_data['stack']
+            current_idx = stack[-1][2]
+            user_id = update.callback_query.from_user.id
+
+            chat_id = user_data['chat_id']
+            keys = [key for key in Config.get_api_keys(chat_id)]
+
+            if len(keys) is 0:
+                message = 'You do not have access to any existing API keys, please send me a valid key name'
+                buttons = None
+
+            else:
+                message = 'Select an API key'
+                buttons = [[InlineKeyboardButton(text=key, callback_data='0_' + str(key))] for key in keys]
+
+            self.send_or_edit(bot, user_data, update.callback_query.message, message, buttons)
+            return self.ADD_HANDLER_API_KEY
+        except Exception as ex:
+            traceback.print_exc()
+
+    def add_handler_new_api_key_callback(self, bot, update, user_data):
+        message = 'Please send me a name for your API key (max length is 32)'
+        buttons = None
+        self.send_or_edit(bot, user_data, update.callback_query.message, message, buttons)
+        return self.ADD_HANDLER_API_KEY
+
+    def add_handler_api_key_msg(self, bot, update, user_data):
+        user_data['user_msg'] = True
+        try:
+            if update.message.text:
+                key = update.message.text.strip()
+
+                # If no name given
+                if user_data['acc'] is None:
+                    if Cache.contains(key) or len(key) >= 32 or key.startswith('$'):
+                        message = 'Invalid API key name. Either it is already in use, starts with a $, or it is too long'
+                        buttons = None
+                        self.send_or_edit(bot, user_data, update.message, message, buttons)
+                    else:
+                        user_data['acc'] = key
+                        message = 'Now send me the API key itself'
+                        buttons = None
+                        self.send_or_edit(bot, user_data, update.message, message, buttons)
+                    return self.ADD_HANDLER_API_KEY
+                else:
+                    Cache.put(user_data['acc'], key, encrypt=True)
+                    return self.handle_stack(bot, update.message, user_data)
+            else:
+                message = 'Invalid reply. It must contain text'
+                buttons = None
+                self.send_or_edit(bot, user_data, update.message, message, buttons)
+                return self.ADD_HANDLER_API_KEY
+        except Exception as ex:
+            traceback.print_exc()
+
 
     def edit_chat(self, bot, update, user_data):
         query = update.callback_query
@@ -287,10 +353,16 @@ class ConfigConversation (object):
                     CallbackQueryHandler(self.add_handler_callback, pattern='^[0-9]+$', pass_user_data=True)
                 ],
                 self.ADD_HANDLER_CACHE_KEY: [
-                    CallbackQueryHandler(self.add_handler_cache_key_callback, pattern='^0_.+$', pass_user_data=True),
+                    CallbackQueryHandler(self.add_handler_key_callback, pattern='^0_.+$', pass_user_data=True),
                     CallbackQueryHandler(self.add_handler_new_cache_key_callback, pattern='^%s$' % self.ADD, pass_user_data=True),
                     CallbackQueryHandler(self.add_handler_select_cache_key_callback, pattern='^%s$' % self.COPY, pass_user_data=True),
                     MessageHandler(Filters.all, self.add_handler_cache_key_msg, pass_user_data=True)
+                ],
+                self.ADD_HANDLER_API_KEY: [
+                    CallbackQueryHandler(self.add_handler_key_callback, pattern='^0_.+$', pass_user_data=True),
+                    CallbackQueryHandler(self.add_handler_new_api_key_callback, pattern='^%s$' % self.ADD, pass_user_data=True),
+                    CallbackQueryHandler(self.add_handler_select_api_key_callback, pattern='^%s$' % self.COPY, pass_user_data=True),
+                    MessageHandler(Filters.all, self.add_handler_api_key_msg, pass_user_data=True)
                 ]
             },
             fallbacks=[]

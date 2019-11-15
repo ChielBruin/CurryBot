@@ -13,8 +13,10 @@ class NoChild (object):
     pass
 
 class AskCacheKey (object):
-    def __init__(self, is_local=False):
-        self.is_local = is_local
+    pass
+
+class AskAPIKey (object):
+    pass
 
 class Done (object):
     def __init__(self, handler):

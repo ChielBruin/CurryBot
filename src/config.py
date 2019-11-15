@@ -7,6 +7,7 @@ class Config (object):
     chat_admins = {}
     chat_titles = {}
     chat_keys = {}
+    api_keys = {}
 
     @classmethod
     def set_chat_title(cls, chat_id, title):
@@ -53,33 +54,43 @@ class Config (object):
 
     @classmethod
     def add_chat_key(cls, key, chat_id):
-        chat_id = str(chat_id)
-        if chat_id not in cls.chat_keys:
-            cls.chat_keys[chat_id] = [key]
-        elif key not in cls.chat_keys[chat_id]:
-            cls.chat_keys[chat_id].append(key)
-
-    @classmethod
-    def has_chat_key(cls, key):
-        for chat_id in cls.chat_keys:
-            if key in cls.chat_keys[chat_id]:
-                return True
-        return False
+        cls._add_key(cls.chat_keys, key, chat_id)
 
     @classmethod
     def get_chat_keys(cls, chat_id):
+        return cls._get_keys(cls.chat_keys, chat_id)
+
+    @classmethod
+    def add_api_key(cls, key, chat_id):
+        cls._add_key(cls.api_keys, key, chat_id)
+
+    @classmethod
+    def get_api_keys(cls, chat_id):
+        return cls._get_keys(cls.api_keys, chat_id)
+
+    @classmethod
+    def _add_key(cls, dict, key, chat_id):
         chat_id = str(chat_id)
-        if chat_id not in cls.chat_keys:
+        if chat_id not in dict:
+            dict[chat_id] = [key]
+        elif key not in dict[chat_id]:
+            dict[chat_id].append(key)
+
+    @classmethod
+    def _get_keys(cls, dict, chat_id):
+        chat_id = str(chat_id)
+        if chat_id not in dict:
             return []
         else:
-            return cls.chat_keys[chat_id]
+            return dict[chat_id]
 
     @classmethod
     def store_config(cls):
         config = {
             'admins': cls.chat_admins,
             'titles': cls.chat_titles,
-            'keys'  : cls.chat_keys
+            'keys'  : cls.chat_keys,
+            'api'  : cls.api_keys
         }
         with open(cls.config_location, 'w') as config_file:
             Logger.log_debug('Writing config to disk')
@@ -104,13 +115,16 @@ class Config (object):
                     cls.chat_admins = config['admins']
                     cls.chat_titles = config['titles']
                     cls.chat_keys   = config['keys']
+                    cls.api_keys   = config['api']
                 else:
                     Logger.log_info('Config file appears to be empty')
                     cls.chat_admins = {}
                     cls.chat_titles = {}
                     cls.chat_keys   = {}
+                    cls.api_keys    = {}
         else:
             Logger.log_error('Config file does not exist (This error can be ignored on the initial run)')
             cls.chat_admins = {}
             cls.chat_titles = {}
             cls.chat_keys   = {}
+            cls.api_keys    = {}
