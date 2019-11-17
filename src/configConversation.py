@@ -146,7 +146,8 @@ class ConfigConversation (object):
                 return self.ADD_HANDLER_CACHE_KEY
 
             elif isinstance(res, AskAPIKey):
-                user_data['acc'] = None
+                stack = user_data['stack']
+                stack.append( (0, None, stack[-1][2]) )
                 buttons = [
                     [InlineKeyboardButton(text='Create own API key', callback_data=str(self.ADD))],
                     [InlineKeyboardButton(text='Use existing API key', callback_data=str(self.COPY))]
@@ -245,8 +246,6 @@ class ConfigConversation (object):
 
     def add_handler_select_api_key_callback(self, bot, update, user_data):
         try:
-            stack = user_data['stack']
-            current_idx = stack[-1][2]
             user_id = update.callback_query.from_user.id
 
             chat_id = user_data['chat_id']
@@ -267,35 +266,40 @@ class ConfigConversation (object):
 
     def add_handler_new_api_key_callback(self, bot, update, user_data):
         message = 'Please send me a name for your API key (max length is 32)'
-        buttons = None
-        self.send_or_edit(bot, user_data, update.callback_query.message, message, buttons)
+        self.send_or_edit(bot, user_data, update.callback_query.message, message)
         return self.ADD_HANDLER_API_KEY
 
     def add_handler_api_key_msg(self, bot, update, user_data):
         user_data['user_msg'] = True
         try:
             if update.message.text:
-                key = update.message.text.strip()
+                val = update.message.text.strip()
 
-                # If no name given
-                if user_data['acc'] is None:
-                    if Cache.contains(key) or len(key) >= 32 or key.startswith('$'):
-                        message = 'Invalid API key name. Either it is already in use, starts with a $, or it is too long'
-                        buttons = None
-                        self.send_or_edit(bot, user_data, update.message, message, buttons)
-                    else:
-                        user_data['acc'] = key
-                        message = 'Now send me the API key itself'
-                        buttons = None
-                        self.send_or_edit(bot, user_data, update.message, message, buttons)
-                    return self.ADD_HANDLER_API_KEY
+                (stage, data, idx) = user_data['stack'][-1]
+                if stage is 0 and (Cache.contains(val) or len(val) >= 32 or val.startswith('$')):
+                    message = 'Invalid API key name. Either it is already in use, it starts with a $, or it is too long'
+                    self.send_or_edit(bot, user_data, update.message, message)
                 else:
-                    Cache.put(user_data['acc'], key, encrypt=True)
-                    return self.handle_stack(bot, update.message, user_data)
+                    (stage, data, res) = self.HANDLERS[idx].create_api(stage, data, val)
+                    user_data['stack'][-1] = (stage, data, idx)
+
+                    if isinstance(res, Send):
+                        self.send_or_edit(bot, user_data, update.message, res.msg, res.buttons)
+                        return self.ADD_HANDLER_API_KEY
+                    elif isinstance(res, Done):
+                        (key, value) = res.handler
+                        user_data['acc'] = key
+                        Cache.put(key, value, encrypt=True)
+
+                        user_data['stack'] = user_data['stack'][:-1]
+                        return self.handle_stack(bot, update.message, user_data)
+                    else:
+                        print(stage, data, res)
+                        self.send_or_edit(bot, user_data, update.message, 'Unexpected API creation state! Please report your steps to the developer')
+                        return ConversationHandler.END
             else:
                 message = 'Invalid reply. It must contain text'
-                buttons = None
-                self.send_or_edit(bot, user_data, update.message, message, buttons)
+                self.send_or_edit(bot, user_data, update.message, message)
                 return self.ADD_HANDLER_API_KEY
         except Exception as ex:
             traceback.print_exc()

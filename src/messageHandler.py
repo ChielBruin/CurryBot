@@ -59,6 +59,10 @@ class Handler (object):
     def create(cls, stage, data, arg):
         raise CreateException('create not implemented for %s' % cls)
 
+    @classmethod
+    def create_api(cls, stage, data, arg):
+        raise CreateException('create_api not implemented for %s' % cls)
+
 class MessageHandler (Handler):
     def call(self, bot, message, target):
         raise Exception('Filter not implemented')
