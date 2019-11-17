@@ -63,14 +63,9 @@ class ConfigConversation (object):
         )
         return self.SELECT_CHAT
 
-    def end(self, bot, update):
-        query = update.callback_query
-        bot.edit_message_text(
-            chat_id=query.message.chat_id,
-            message_id=query.message.message_id,
-            text='See you next time!',
-            reply_markup=None
-        )
+    def end(self, bot, update, user_data):
+        msg = update.callback_query.message
+        self.send_or_edit(bot, user_data, msg, 'See you next time!')
         return ConversationHandler.END
 
     def add_start(self, bot, update, user_data):
@@ -107,7 +102,7 @@ class ConfigConversation (object):
         stack = user_data['stack']
         if len(stack) is 0:
             self.bot.register_message_handler(chat=int(user_data['chat_id']), name=user_data['name'], handler=user_data['acc'])
-            self.send_or_edit(bot, user_data, msg, 'Hander added!', None)
+            self.send_or_edit(bot, user_data, msg, 'Hander added!')
             return ConversationHandler.END
 
         (stage, data, idx) = stack[-1]
@@ -159,11 +154,11 @@ class ConfigConversation (object):
                 raise Exception('Unknown response: %s' % res)
         except CreateException as ex:
             traceback.print_exc()
-            self.send_or_edit(bot, user_data, msg, 'Implementation missing! Please report your steps to the developer', None)
+            self.send_or_edit(bot, user_data, msg, 'Implementation missing! Please report your steps to the developer')
             return ConversationHandler.END
         except Exception as ex:
             traceback.print_exc()
-            self.send_or_edit(bot, user_data, msg, 'Error while processing handler create event! Please report your steps to the developer', None)
+            self.send_or_edit(bot, user_data, msg, 'Error while processing handler create event! Please report your steps to the developer')
             return ConversationHandler.END
 
     def add_handler_callback(self, bot, update, user_data):
@@ -212,8 +207,7 @@ class ConfigConversation (object):
 
     def add_handler_new_cache_key_callback(self, bot, update, user_data):
         message = 'Please send me a cache key to use (max length is 32)'
-        buttons = None
-        self.send_or_edit(bot, user_data, update.callback_query.message, message, buttons)
+        self.send_or_edit(bot, user_data, update.callback_query.message, message)
         return self.ADD_HANDLER_CACHE_KEY
 
     def add_handler_cache_key_msg(self, bot, update, user_data):
@@ -223,8 +217,7 @@ class ConfigConversation (object):
             try:
                 if Cache.contains(key) or len(key) >= 32 or key.startswith('$'):
                     message = 'Invalid key. Either it is already in use, starts with a $, or it is too long'
-                    buttons = None
-                    self.send_or_edit(bot, user_data, update.message, message, buttons)
+                    self.send_or_edit(bot, user_data, update.message, message)
                     return self.ADD_HANDLER_CACHE_KEY
                 else:
                     user_data['acc'] = key
@@ -235,8 +228,7 @@ class ConfigConversation (object):
                 print(ex)
         else:
             message = 'Invalid key. It must contain text'
-            buttons = None
-            self.send_or_edit(bot, user_data, update.message, message, buttons)
+            self.send_or_edit(bot, user_data, update.message, message)
             return self.ADD_HANDLER_CACHE_KEY
 
     def add_handler_key_callback(self, bot, update, user_data):
@@ -334,11 +326,11 @@ class ConfigConversation (object):
             entry_points=[CommandHandler('config', self.start, pass_user_data=True)],
             states={
                 self.SELECT_CHAT: [
-                    CallbackQueryHandler(self.end, pattern='^%s$' % self.EXIT),
+                    CallbackQueryHandler(self.end, pattern='^%s$' % self.EXIT, pass_user_data=True),
                     CallbackQueryHandler(self.edit_chat, pattern='^-?[0-9]{5,}$', pass_user_data=True)
                 ],
                 self.SELECT_ACTION: [
-                    CallbackQueryHandler(self.end, pattern='^%s$' % self.EXIT),
+                    CallbackQueryHandler(self.end, pattern='^%s$' % self.EXIT, pass_user_data=True),
                     CallbackQueryHandler(self.add_start, pattern='^%s$' % self.ADD, pass_user_data=True),
                     # CallbackQueryHandler(self.edit, pattern='^%s$' % self.EDIT, pass_user_data=True),
                     # CallbackQueryHandler(self.remove, pattern='^%s$' % self.REMOVE, pass_user_data=True),
