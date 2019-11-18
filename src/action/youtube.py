@@ -58,6 +58,7 @@ class YtPlaylistAppend (MessageHandler):
         }
         )
         response = request.execute()
+        #TODO: store potentially updated credentials
 
     def call(self, bot, msg, reply_to, exclude):
         self._playlist_add(msg.text)

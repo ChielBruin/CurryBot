@@ -135,14 +135,19 @@ class SenderIsBotAdmin (MessageHandler):
         return "Sender is bot admin"
 
     @classmethod
+    def _from_dict(cls, dict, children):
+        return SenderIsBotAdmin(children)
+
+    def _to_dict(self):
+        print(42, self.children)
+        return {}
+
+    @classmethod
     def create(cls, stage, data, arg):
         if stage is 0:
-            return (1, None, AskChild())
+            return (1, [], AskChild())
         elif stage is 1 and isinstance(arg, MessageHandler):
-            if data is None:
-                data = [arg]
-            else:
-                data.append(arg)
+            data.append(arg)
             return (1, data, AskChild())
         elif stage is 1 and isinstance(arg, NoChild):
             return (-1, None, Done(SenderIsBotAdmin(data)))

@@ -1,6 +1,7 @@
 import os, json
 
 from logger import Logger
+from messageHandler import MessageHandler
 
 
 class Config (object):
@@ -85,43 +86,68 @@ class Config (object):
             return dict[chat_id]
 
     @classmethod
-    def store_config(cls):
+    def store_config(cls, bot):
+        Logger.log_debug('Serializing config')
+        handlers = {}
+        for chat_id in bot._chat_message_handlers:
+            handlers[chat_id] = {}
+            chat_handlers = bot._chat_message_handlers[chat_id]
+            for (name, handler) in chat_handlers:
+                handlers[chat_id][name] = handler.to_dict()
+        print(handlers)
+
+        tick_handlers = {}
+        for (name, handler) in bot._tick_handlers:
+            tick_handlers[name] = handler.to_dict()
+        print(tick_handlers)
+
         config = {
             'admins': cls.chat_admins,
             'titles': cls.chat_titles,
             'keys'  : cls.chat_keys,
-            'api'  : cls.api_keys
+            'api'  : cls.api_keys,
+            'handlers': handlers,
+            'tick_handlers': tick_handlers
         }
         with open(cls.config_location, 'w') as config_file:
             Logger.log_debug('Writing config to disk')
             json.dump(config, config_file)
 
     @classmethod
-    def load_config(cls):
+    def load_config(cls, bot):
         if os.path.exists(cls.config_location):
             with open(cls.config_location, 'r') as config_file:
                 Logger.log_debug('Loading config')
                 content = config_file.read()
-                if content:
-                    try:
-                        config = json.loads(content)
-                        if 'admins' not in config or 'titles' not in config or 'keys' not in config:
-                            raise Exception()
-                    except:
-                        print(content)
-                        Logger.log_error('Malformed cache, starting with a fresh cache')
-                        config = {'admins' : {}, 'titles': {}, 'keys': {}}
+                try:
+                    config = json.loads(content)
+                except json.JSONDecodeError as ex:
+                    config = {}
+                    Logger.log_error('Malformed config file')
 
-                    cls.chat_admins = config['admins']
-                    cls.chat_titles = config['titles']
-                    cls.chat_keys   = config['keys']
-                    cls.api_keys   = config['api']
-                else:
-                    Logger.log_info('Config file appears to be empty')
-                    cls.chat_admins = {}
-                    cls.chat_titles = {}
-                    cls.chat_keys   = {}
-                    cls.api_keys    = {}
+                cls.chat_admins = config['admins'] if 'admins' in config else {}
+                cls.chat_titles = config['titles'] if 'titles' in config else {}
+                cls.chat_keys   = config['keys']   if 'keys'   in config else {}
+                cls.api_keys    = config['api']    if 'api'    in config else {}
+
+                handlers = config['handlers'] if 'handlers' in config else {}
+                for chat_id in handlers:
+                    chat_handlers = handlers[chat_id]
+                    for handler_name in chat_handlers:
+                        handler_dict = chat_handlers[handler_name]
+                        print(handler_dict)
+                        handler = MessageHandler.class_from_dict(handler_dict).from_dict(handler_dict)
+                        self.bot.register_message_handler(chat, handler, handler_name)
+
+                handlers = config['tick_handlers'] if 'tick_handlers' in config else {}
+                for chat_id in handlers:
+                    chat_handlers = handlers[chat_id]
+                    for handler_name in chat_handlers:
+                        handler_dict = chat_handlers[handler_name]
+                        print(handler_dict)
+                        handler = MessageHandler.class_from_dict(handler_dict).from_dict(handler_dict)
+                        self.bot.register_tick_handler(chat, handler, handler_name)
+
         else:
             Logger.log_error('Config file does not exist (This error can be ignored on the initial run)')
             cls.chat_admins = {}

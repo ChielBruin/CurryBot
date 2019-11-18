@@ -22,14 +22,6 @@ class TimeFilter (MessageHandler):
 
     def call(self, bot, message, target, exclude):
         time = message.date
-        # print(time.minute, self.minute)
-        # print(time.hour, self.hour)
-        # print(time.day, self.day)
-        # print(time.isoweekday(), self.weekday)
-        # print(time.isocalendar()[1], self.week)
-        # print(time.month, self.month)
-        # print(self.calc_monthweek(time), self.monthweek)
-        # print(time.year, self.year)
         if (
                 ((self.minute    is None) or self.minute    == time.minute)
             and ((self.hour      is None) or self.hour      == time.hour)

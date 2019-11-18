@@ -101,7 +101,13 @@ class ConfigConversation (object):
     def handle_stack(self, bot, msg, user_data):
         stack = user_data['stack']
         if len(stack) is 0:
-            self.bot.register_message_handler(chat=int(user_data['chat_id']), name=user_data['name'], handler=user_data['acc'])
+            handler = user_data['acc']
+            chat_id = user_data['chat_id']
+            name = user_data['name']
+            if isinstance(handler, TimeFilter):
+                self.bot.register_tick_handler(TickHandler(chat_id, handler), name)
+            else:
+                self.bot.register_message_handler(chat=chat_id, name=name, handler=handler)
             self.send_or_edit(bot, user_data, msg, 'Hander added!')
             return ConversationHandler.END
 
@@ -281,6 +287,7 @@ class ConfigConversation (object):
                     elif isinstance(res, Done):
                         (key, value) = res.handler
                         user_data['acc'] = key
+                        Cache.config_entry(key, True)
                         Cache.put(key, value, encrypt=True)
 
                         user_data['stack'] = user_data['stack'][:-1]

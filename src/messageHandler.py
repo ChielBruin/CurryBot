@@ -48,12 +48,34 @@ class Handler (object):
             return False
 
     @classmethod
+    def class_from_dict(cls, dict):
+        class_name = dict['name']
+        return globals()[class_name]
+
+    @classmethod
+    def from_dict(cls, dict):
+        return cls._from_dict(dict, [cls.class_from_dict(child).from_dict(child) for child in dict['children']])
+
+    def to_dict(self):
+        dict = self._to_dict()
+        dict['children'] = [d.to_dict() for d in self.children]
+        dict['name'] = type(self).__name__
+        return dict
+
+    @classmethod
     def is_entrypoint(cls):
         raise Exception('is_entrypoint not implemented for %s' % cls)
 
     @classmethod
     def get_name(cls):
         raise Exception('get_name not implemented for %s' % cls)
+
+    @classmethod
+    def _from_dict(cls, dict, children):
+        raise Exception('_from_dict not implemented for %s' % cls)
+
+    def _to_dict(self):
+        raise Exception('_to_dict not implemented for %s' % self)
 
     @classmethod
     def create(cls, stage, data, arg):
@@ -146,21 +168,3 @@ class RandomMessageHandler (MessageHandler):
             id = keys[rand]
             if id not in exclude:
                  return id
-
-
-class TickHandler (Handler):
-    def __init__(self, groups, children):
-        super(TickHandler, self).__init__(children)
-        self.groups = groups
-
-    def call(self, bot, time):
-        res = []
-        for group_id in self.groups:
-            msg = Message(-1, None, time, Chat(group_id, 'tick_group %s' % group_id), text='tick @ %s' % time.strftime('%Y-%m-%d %H:%M:%S'))
-            for child in self.children:
-                try:
-                    out = child.call(bot, msg, None, [])
-                    res.extend(out)
-                except FilterException:
-                    continue
-        return res
