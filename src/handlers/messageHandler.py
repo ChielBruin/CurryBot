@@ -1,4 +1,6 @@
 import random, string, copy
+import inspect, sys
+
 from telegram import Message, Chat
 
 from logger import Logger
@@ -50,7 +52,7 @@ class Handler (object):
     @classmethod
     def class_from_dict(cls, dict):
         class_name = dict['name']
-        return globals()[class_name]
+        return [c for (name, c) in inspect.getmembers(sys.modules['handlers'], inspect.isclass) if name == class_name][0]
 
     @classmethod
     def from_dict(cls, dict):

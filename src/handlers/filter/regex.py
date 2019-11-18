@@ -1,6 +1,6 @@
 import re
 
-from messageHandler import MessageHandler
+from ..messageHandler import MessageHandler
 from exceptions import FilterException
 
 from configResponse import Send, Done, AskChild, NoChild, CreateException
@@ -65,6 +65,9 @@ class AbstractRegexFilter (MessageHandler):
             print(stage, data, arg)
             raise CreateException('Invalid create state for regexFilter')
 
+    def _to_dict(self):
+        return {'group': self._group, 'regex': self._regex.pattern}
+
 
 class MatchFilter (AbstractRegexFilter):
     def matcher(self, regex, text):
@@ -78,6 +81,12 @@ class MatchFilter (AbstractRegexFilter):
     def _create(cls, regex, children, group):
         return MatchFilter(regex, children, group)
 
+    @classmethod
+    def _from_dict(cls, dict, children):
+        regex = dict['regex']
+        group = None if dict['group'] == 'None' else dict['group']
+        return MatchFilter(regex, children, group=group)
+
 
 class SearchFilter (AbstractRegexFilter):
     def matcher(self, regex, text):
@@ -90,3 +99,9 @@ class SearchFilter (AbstractRegexFilter):
     @classmethod
     def _create(cls, regex, children, group):
         return SearchFilter(regex, children, group)
+
+    @classmethod
+    def _from_dict(cls, dict, children):
+        regex = dict['regex']
+        group = None if dict['group'] == 'None' else dict['group']
+        return SearchFilter(regex, children, group=group)

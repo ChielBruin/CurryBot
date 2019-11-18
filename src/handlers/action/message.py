@@ -1,4 +1,4 @@
-from messageHandler import MessageHandler, RandomMessageHandler
+from ..messageHandler import MessageHandler, RandomMessageHandler
 from configResponse import Send, Done, AskChild, CreateException
 import re
 

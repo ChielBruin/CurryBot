@@ -1,41 +1,17 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, ConversationHandler, MessageHandler
 from telegram.ext.filters import Filters
-import traceback
+import traceback, inspect, sys
 
 from logger import Logger
 from config import Config
 from cache import Cache
 from configResponse import Send, Done, AskChild, NoChild, AskCacheKey, AskAPIKey, CreateException
-
-from filter.type     import IsReply, CommandFilter, SenderIsBotAdmin, UserJoinedChat
-from filter.composit import Try, PickWeighted, PickUniform, PercentageFilter, Swallow
-from filter.regex    import MatchFilter, SearchFilter
-from filter.time     import TimeFilter
-from action.message  import SendTextMessage, SendMarkdownMessage, SendHTMLMessage
-from action.util     import MakeSenderAdmin
-from action.sticker  import SendSticker
-from action.flickr   import SendFlickr
-from action.activity import MonitorChatActivity, MonitorUserActivity
-from application.type import SwapReply, ParameterizeText
-from action.youtube   import YtPlaylistAppend
-
+import handlers
 
 class ConfigConversation (object):
-    HANDLERS = [
-        IsReply, CommandFilter, SenderIsBotAdmin, UserJoinedChat,
-        Try, PickWeighted, PickUniform, PercentageFilter, Swallow,
-        MatchFilter, SearchFilter,
-        TimeFilter,
-        SendTextMessage, SendMarkdownMessage, SendHTMLMessage,
-        MakeSenderAdmin,
-        SendSticker,
-        SendFlickr,
-        YtPlaylistAppend,
-        SwapReply, ParameterizeText,
-        MonitorChatActivity, MonitorUserActivity
-    ]
-
+    HANDLERS = [c for (name, c) in inspect.getmembers(sys.modules['handlers'], inspect.isclass)]
+    print(HANDLERS)
     SELECT_CHAT, SELECT_ACTION, ADD_HANDLER_STEP, ADD_HANDLER_INITIAL, ADD_HANDLER_CHILD, ADD_HANDLER_CACHE_KEY, ADD_HANDLER_API_KEY = range(7)
     EXIT, ADD, EDIT, REMOVE, COPY, SKIP = range(6)
 
@@ -104,7 +80,7 @@ class ConfigConversation (object):
             handler = user_data['acc']
             chat_id = user_data['chat_id']
             name = user_data['name']
-            if isinstance(handler, TimeFilter):
+            if isinstance(handler, handlers.filter.TimeFilter):
                 self.bot.register_tick_handler(TickHandler(chat_id, handler), name)
             else:
                 self.bot.register_message_handler(chat=chat_id, name=name, handler=handler)

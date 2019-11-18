@@ -1,7 +1,7 @@
 import os, json
 
 from logger import Logger
-from messageHandler import MessageHandler
+from handlers.messageHandler import MessageHandler
 
 
 class Config (object):
@@ -135,18 +135,16 @@ class Config (object):
                     chat_handlers = handlers[chat_id]
                     for handler_name in chat_handlers:
                         handler_dict = chat_handlers[handler_name]
-                        print(handler_dict)
                         handler = MessageHandler.class_from_dict(handler_dict).from_dict(handler_dict)
-                        self.bot.register_message_handler(chat, handler, handler_name)
+                        bot.register_message_handler(chat_id, handler, handler_name)
 
                 handlers = config['tick_handlers'] if 'tick_handlers' in config else {}
                 for chat_id in handlers:
                     chat_handlers = handlers[chat_id]
                     for handler_name in chat_handlers:
                         handler_dict = chat_handlers[handler_name]
-                        print(handler_dict)
                         handler = MessageHandler.class_from_dict(handler_dict).from_dict(handler_dict)
-                        self.bot.register_tick_handler(chat, handler, handler_name)
+                        bot.register_tick_handler(chat_id, handler, handler_name)
 
         else:
             Logger.log_error('Config file does not exist (This error can be ignored on the initial run)')
