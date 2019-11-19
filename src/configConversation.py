@@ -45,7 +45,25 @@ class ConfigConversation (object):
         return ConversationHandler.END
 
     def add_start(self, bot, update, user_data):
-        self.send_or_edit(bot, user_data, update.callback_query.message, "Please send me a name for the new handler")
+        buttons = [[
+         InlineKeyboardButton(text='Every minute', callback_data='0'),
+         InlineKeyboardButton(text='Every message', callback_data='1')
+        ]]
+        self.send_or_edit(bot, user_data, update.callback_query.message, "Should the rule trigger on receiving a message or every minute", buttons=buttons)
+        return self.ADD_HANDLER_INITIAL
+
+    def add_initial_type_msg(self, bot, update, user_data):
+        message = update.callback_query.message
+        user_data['is_tick'] = False
+        return self._add_initial_type(bot, message, user_data)
+
+    def add_initial_type_tick(self, bot, update, user_data):
+        message = update.callback_query.message
+        user_data['is_tick'] = True
+        return self._add_initial_type(bot, message, user_data)
+
+    def _add_initial_type(self, bot, message, data):
+        self.send_or_edit(bot, data, message, "Please send me a name for the new handler")
         return self.ADD_HANDLER_INITIAL
 
     def add_initial(self, bot, update, user_data):
@@ -80,10 +98,12 @@ class ConfigConversation (object):
             handler = user_data['acc']
             chat_id = user_data['chat_id']
             name = user_data['name']
-            if isinstance(handler, handlers.filter.TimeFilter):
-                self.bot.register_tick_handler(TickHandler(chat_id, handler), name)
+            if user_data['is_tick']:
+                self.bot.register_tick_handler(chat=chat_id, handler=handler, name=name)
+                Logger.log_info('Added tick handler \'%s\'' % name)
             else:
                 self.bot.register_message_handler(chat=chat_id, name=name, handler=handler)
+                Logger.log_info('Added message handler \'%s\'' % name)
             self.send_or_edit(bot, user_data, msg, 'Hander added!')
             return ConversationHandler.END
 
@@ -320,6 +340,8 @@ class ConfigConversation (object):
                     # CallbackQueryHandler(self.copy, pattern='^%s$' % self.COPY, pass_user_data=True)
                 ],
                 self.ADD_HANDLER_INITIAL: [
+                    CallbackQueryHandler(self.add_initial_type_tick, pattern='^0$', pass_user_data=True),
+                    CallbackQueryHandler(self.add_initial_type_msg, pattern='^1$', pass_user_data=True),
                     MessageHandler(Filters.all, self.add_initial, pass_user_data=True)
                 ],
                 self.ADD_HANDLER_STEP: [
