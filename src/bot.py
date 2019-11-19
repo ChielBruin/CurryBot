@@ -31,11 +31,34 @@ class CurryBot (object):
         self.dispatcher.add_handler(TelegramMessageHandler(Filters.all,
                             (lambda bot, update, self=self: self.on_receive(bot, update))))
 
+    def list_tick_handlers(self, chat_id):
+        if chat_id in self._tick_handlers:
+            return self._tick_handlers[chat_id]
+        else:
+            return []
+
+    def list_message_handlers(self, chat_id):
+        if chat_id in self._chat_message_handlers:
+            return self._chat_message_handlers[chat_id]
+        else:
+            return []
+
     def register_message_handler(self, chat, handler, name):
         self._register_handler(self._chat_message_handlers, chat, handler, name)
 
+    def remove_message_handler(self, chat, name):
+        self._remove_handler(self._chat_message_handlers, chat, name)
+
     def register_tick_handler(self, chat, handler, name):
         self._register_handler(self._tick_handlers, chat, handler, name)
+
+    def register_tick_handler(self, chat, name):
+        self._remove_handler(self._tick_handlers, chat, name)
+
+    def _remove_handler(self, dict, chat, handler_name):
+        chat = str(chat)
+        if chat in dict:
+            dict[chat] = [(name, handler) for (name, handler) in dict[chat] if not name == handler_name]
 
     def _register_handler(self, dict, chat, handler, name):
         chat = str(chat)
@@ -105,6 +128,10 @@ class CurryBot (object):
     def has_handler_with_name(self, new_name):
         for chat in self._chat_message_handlers:
             for (name, _) in self._chat_message_handlers[chat]:
+                if name == new_name:
+                    return True
+        for chat in self._tick_handlers:
+            for (name, _) in self._tick_handlers[chat]:
                 if name == new_name:
                     return True
         return False

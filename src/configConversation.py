@@ -12,7 +12,7 @@ import handlers
 class ConfigConversation (object):
     HANDLERS = [c for (name, c) in inspect.getmembers(sys.modules['handlers'], inspect.isclass)]
     print(HANDLERS)
-    SELECT_CHAT, SELECT_ACTION, ADD_HANDLER_STEP, ADD_HANDLER_INITIAL, ADD_HANDLER_CHILD, ADD_HANDLER_CACHE_KEY, ADD_HANDLER_API_KEY = range(7)
+    SELECT_CHAT, SELECT_ACTION, ADD_HANDLER_STEP, ADD_HANDLER_INITIAL, ADD_HANDLER_CHILD, ADD_HANDLER_CACHE_KEY, ADD_HANDLER_API_KEY, REMOVE_HANDLER = range(8)
     EXIT, ADD, EDIT, REMOVE, COPY, SKIP = range(6)
 
     def __init__ (self, bot):
@@ -49,8 +49,32 @@ class ConfigConversation (object):
          InlineKeyboardButton(text='Every minute', callback_data='0'),
          InlineKeyboardButton(text='Every message', callback_data='1')
         ]]
-        self.send_or_edit(bot, user_data, update.callback_query.message, "Should the rule trigger on receiving a message or every minute", buttons=buttons)
+        self.send_or_edit(bot, user_data, update.callback_query.message, 'Should the rule trigger on receiving a message or every minute', buttons=buttons)
         return self.ADD_HANDLER_INITIAL
+
+    def remove_start(self, bot, update, user_data):
+        chat_id = user_data['chat_id']
+        message_buttons = [[InlineKeyboardButton(text=name, callback_data='_0_%d' % idx) for (idx, (name, _)) in enumerate(self.bot.list_message_handlers(chat_id))]]
+        tick_buttons    = [[InlineKeyboardButton(text=name, callback_data='_1_%d' % idx) for (idx, (name, _)) in enumerate(self.bot.list_tick_handlers(chat_id))]]
+        self.send_or_edit(bot, user_data, update.callback_query.message, 'Select a handler to remove', buttons=message_buttons + tick_buttons)
+        return self.REMOVE_HANDLER
+
+    def remove_end(self, bot, update, user_data):
+        try:
+            idx = int(update.callback_query.data[3:])
+            chat_id = user_data['chat_id']
+
+            if update.callback_query.data[1] == '0':
+                name, _ = self.bot.list_message_handlers(chat_id)[idx]
+                self.bot.remove_message_handler(chat_id, name)
+            else:
+                name, _ = self.list_tick_handlers(chat_id)[idx]
+                self.bot.remove_tick_handler(chat_id, name)
+
+            self.send_or_edit(bot, user_data, update.callback_query.message, 'Removed \'%s\'' % name)
+            return ConversationHandler.END
+        except:
+            traceback.print_exc()
 
     def add_initial_type_msg(self, bot, update, user_data):
         message = update.callback_query.message
@@ -63,7 +87,7 @@ class ConfigConversation (object):
         return self._add_initial_type(bot, message, user_data)
 
     def _add_initial_type(self, bot, message, data):
-        self.send_or_edit(bot, data, message, "Please send me a name for the new handler")
+        self.send_or_edit(bot, data, message, 'Please send me a name for the new handler')
         return self.ADD_HANDLER_INITIAL
 
     def add_initial(self, bot, update, user_data):
@@ -302,13 +326,13 @@ class ConfigConversation (object):
 
     def edit_chat(self, bot, update, user_data):
         query = update.callback_query
-        chat_id = int(query.data)
+        chat_id = query.data
         user_data['chat_id'] = chat_id
         chat_name = Config.get_chat_title(chat_id)
 
         buttons = [[
             InlineKeyboardButton(text='Add a handler', callback_data=str(self.ADD)),
-            # InlineKeyboardButton(text='Remove handler', callback_data=str(self.REMOVE))
+            InlineKeyboardButton(text='Remove handler', callback_data=str(self.REMOVE))
             ],[
             # InlineKeyboardButton(text='Edit a handler', callback_data=str(self.EDIT)),
             # InlineKeyboardButton(text='Copy a handler', callback_data=str(self.COPY))
@@ -336,8 +360,11 @@ class ConfigConversation (object):
                     CallbackQueryHandler(self.end, pattern='^%s$' % self.EXIT, pass_user_data=True),
                     CallbackQueryHandler(self.add_start, pattern='^%s$' % self.ADD, pass_user_data=True),
                     # CallbackQueryHandler(self.edit, pattern='^%s$' % self.EDIT, pass_user_data=True),
-                    # CallbackQueryHandler(self.remove, pattern='^%s$' % self.REMOVE, pass_user_data=True),
+                    CallbackQueryHandler(self.remove_start, pattern='^%s$' % self.REMOVE, pass_user_data=True),
                     # CallbackQueryHandler(self.copy, pattern='^%s$' % self.COPY, pass_user_data=True)
+                ],
+                self.REMOVE_HANDLER: [
+                    CallbackQueryHandler(self.remove_end, pattern='^_[01]_[\d]+$', pass_user_data=True)
                 ],
                 self.ADD_HANDLER_INITIAL: [
                     CallbackQueryHandler(self.add_initial_type_tick, pattern='^0$', pass_user_data=True),
@@ -372,22 +399,17 @@ class ConfigConversation (object):
 
     def send_or_edit(self, bot, data, original, message, buttons=None):
         buttons = None if buttons is None else InlineKeyboardMarkup(buttons)
-        try:
-            if data['user_msg']:
-                bot.send_message(
-                    chat_id=original.chat_id,
-                    reply_markup= buttons,
-                    text=message
-                )
-            else:
-                bot.edit_message_text(
-                    chat_id=original.chat_id,
-                    message_id=original.message_id,
-                    reply_markup=buttons,
-                    text=message
-                )
-        except Exception as e:
-            print('except:', dir(e))
-            import traceback
-            traceback.print_exc()
+        if data['user_msg']:
+            bot.send_message(
+                chat_id=original.chat_id,
+                reply_markup= buttons,
+                text=message
+            )
+        else:
+            bot.edit_message_text(
+                chat_id=original.chat_id,
+                message_id=original.message_id,
+                reply_markup=buttons,
+                text=message
+            )
         data['user_msg'] = False
