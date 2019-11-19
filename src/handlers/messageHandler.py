@@ -3,10 +3,9 @@ import inspect, sys
 
 from telegram import Message, Chat
 
-from logger import Logger
-from cache import Cache
 from exceptions import FilterException
 from configResponse import CreateException
+from data import Cache
 
 class Handler (object):
     def __init__(self, children=[]):
@@ -69,6 +68,14 @@ class Handler (object):
         raise Exception('is_entrypoint not implemented for %s' % cls)
 
     @classmethod
+    def is_private(cls):
+        '''
+        Some handlers should not be copied to other chats, as this will expose their API keys.
+        These handlers should return True.
+        '''
+        return False
+
+    @classmethod
     def get_name(cls):
         raise Exception('get_name not implemented for %s' % cls)
 
@@ -92,6 +99,8 @@ class MessageHandler (Handler):
         raise Exception('Filter not implemented')
 
 class RandomMessageHandler (MessageHandler):
+    from data import Cache
+
     def __init__(self, id, children, do_cache=False):
         super(RandomMessageHandler, self).__init__(children)
         self._id = id

@@ -3,16 +3,13 @@ from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, Conversa
 from telegram.ext.filters import Filters
 import traceback, inspect, sys
 
-from logger import Logger
-from config import Config
-from cache import Cache
+from data import Logger, Cache
 from configResponse import Send, Done, AskChild, NoChild, AskCacheKey, AskAPIKey, CreateException
 import handlers
 
 class ConfigConversation (object):
     HANDLERS = [c for (name, c) in inspect.getmembers(sys.modules['handlers'], inspect.isclass)]
-    print(HANDLERS)
-    SELECT_CHAT, SELECT_ACTION, ADD_HANDLER_STEP, ADD_HANDLER_INITIAL, ADD_HANDLER_CHILD, ADD_HANDLER_CACHE_KEY, ADD_HANDLER_API_KEY, REMOVE_HANDLER = range(8)
+    SELECT_CHAT, SELECT_ACTION, ADD_HANDLER_STEP, ADD_HANDLER_INITIAL, ADD_HANDLER_CHILD, ADD_HANDLER_CACHE_KEY, ADD_HANDLER_API_KEY, REMOVE_HANDLER, COPY_HANDLER = range(9)
     EXIT, ADD, EDIT, REMOVE, COPY, SKIP = range(6)
 
     def __init__ (self, bot):
@@ -26,8 +23,8 @@ class ConfigConversation (object):
         message = update.message
         Logger.log_info("User %s started config conversation." % user.first_name)
 
-        chats = Config.get_admin_chats(message.from_user.id)
-        chat_names = [(chat_id, Config.get_chat_title(chat_id)) for chat_id in chats]
+        chats = Cache.get_admin_chats(message.from_user.id)
+        chat_names = [(chat_id, Cache.get_chat_title(chat_id)) for chat_id in chats]
 
         buttons = [[InlineKeyboardButton(text=name, callback_data=str(id))] for (id, name) in chat_names]
         buttons.append([InlineKeyboardButton(text='Exit', callback_data=str(self.EXIT))])
@@ -44,13 +41,46 @@ class ConfigConversation (object):
         self.send_or_edit(bot, user_data, msg, 'See you next time!')
         return ConversationHandler.END
 
-    def add_start(self, bot, update, user_data):
-        buttons = [[
-         InlineKeyboardButton(text='Every minute', callback_data='0'),
-         InlineKeyboardButton(text='Every message', callback_data='1')
-        ]]
-        self.send_or_edit(bot, user_data, update.callback_query.message, 'Should the rule trigger on receiving a message or every minute', buttons=buttons)
-        return self.ADD_HANDLER_INITIAL
+    def copy_start(self, bot, update, user_data):
+        msg = update.callback_query.message
+        chats = Cache.get_admin_chats(msg.from_user.id)
+        chat_names = [(chat_id, Cache.get_chat_title(chat_id)) for chat_id in chats if not chat_id == user_data['chat_id'] ]
+
+        buttons = [[InlineKeyboardButton(text=name, callback_data=str(id))] for (id, name) in chat_names]
+        message = 'Select a chat to copy a handler from'
+        self.send_or_edit(bot, user_data, msg, message, buttons)
+        return self.COPY_HANDLER
+
+    def copy_select_handler(self, bot, update, user_data):
+        chat_id = update.callback_query.data
+        user_data['acc'] = chat_id
+
+        msg_handlers = [(idx, name) for (idx, (name, handler)) in enumerate(self.bot.list_message_handlers(chat_id)) if not handler.is_private()]
+        msg_buttons = [[InlineKeyboardButton(text=name, callback_data='_0_%d') for (idx, name) in msg_handlers]]
+        tick_handlers = [(idx, name) for (idx, (name, handler)) in enumerate(self.bot.list_tick_handlers(chat_id)) if not handler.is_private()]
+        tick_buttons = [[InlineKeyboardButton(text=name, callback_data='_1_%d') for (idx, name) in tick_handlers]]
+
+        message = 'Select a handler to copy'
+        self.send_or_edit(bot, user_data, update.callback_query.message, message, msg_buttons + tick_buttons)
+        return self.COPY_HANDLER
+
+    def copy_tick_handler(self, bot, update, user_data):
+        idx = update.callback_query.data[3:]
+        chat_id = user_data['acc']
+        (name, handler) = self.bot.list_tick_handlers(chat_id)[idx]
+        self.bot.register_tick_handler(chat=user_data['chat_id'], name=name, handler=handler)
+
+        self.send_or_edit(bot, user_data, update.callback_query.message, 'Copied \'%s\'' % name)
+        return ConversationHandler.END
+
+    def copy_msg_handler(self, bot, update, user_data):
+        idx = update.callback_query.data[3:]
+        chat_id = user_data['acc']
+        (name, handler) = self.bot.list_message_handlers(chat_id)[idx]
+        self.bot.register_message_handler(chat=user_data['chat_id'], name=name, handler=handler)
+
+        self.send_or_edit(bot, user_data, update.callback_query.message, 'Copied \'%s\'' % name)
+        return ConversationHandler.END
 
     def remove_start(self, bot, update, user_data):
         chat_id = user_data['chat_id']
@@ -75,6 +105,14 @@ class ConfigConversation (object):
             return ConversationHandler.END
         except:
             traceback.print_exc()
+
+    def add_start(self, bot, update, user_data):
+        buttons = [[
+         InlineKeyboardButton(text='Every minute', callback_data='0'),
+         InlineKeyboardButton(text='Every message', callback_data='1')
+        ]]
+        self.send_or_edit(bot, user_data, update.callback_query.message, 'Should the rule trigger on receiving a message or every minute', buttons=buttons)
+        return self.ADD_HANDLER_INITIAL
 
     def add_initial_type_msg(self, bot, update, user_data):
         message = update.callback_query.message
@@ -219,7 +257,7 @@ class ConfigConversation (object):
         current_idx = stack[-1][2]
         user_id = update.callback_query.from_user.id
 
-        keys = [key for chat_id in Config.get_admin_chats(user_id) for key in Config.get_chat_keys(chat_id)]
+        keys = [key for chat_id in Cache.get_admin_chats(user_id) for key in Cache.get_chat_keys(chat_id)]
         if len(keys) is 0:
             message = 'You do not have access to any existing keys, please send me a valid key'
             buttons = None
@@ -248,7 +286,7 @@ class ConfigConversation (object):
                 else:
                     user_data['acc'] = key
                     Cache.put(key, None)
-                    Config.add_chat_key(key, user_data['chat_id'])
+                    Cache.add_chat_key(key, user_data['chat_id'])
                     return self.handle_stack(bot, update.message, user_data)
             except Exception as ex:
                 print(ex)
@@ -267,7 +305,7 @@ class ConfigConversation (object):
             user_id = update.callback_query.from_user.id
 
             chat_id = user_data['chat_id']
-            keys = [key for key in Config.get_api_keys(chat_id)]
+            keys = [key for key in Cache.get_api_keys(chat_id)]
 
             if len(keys) is 0:
                 message = 'You do not have access to any existing API keys, please send me a valid key name'
@@ -328,14 +366,14 @@ class ConfigConversation (object):
         query = update.callback_query
         chat_id = query.data
         user_data['chat_id'] = chat_id
-        chat_name = Config.get_chat_title(chat_id)
+        chat_name = Cache.get_chat_title(chat_id)
 
         buttons = [[
             InlineKeyboardButton(text='Add a handler', callback_data=str(self.ADD)),
             InlineKeyboardButton(text='Remove handler', callback_data=str(self.REMOVE))
             ],[
             # InlineKeyboardButton(text='Edit a handler', callback_data=str(self.EDIT)),
-            # InlineKeyboardButton(text='Copy a handler', callback_data=str(self.COPY))
+            InlineKeyboardButton(text='Copy a handler', callback_data=str(self.COPY)),
             # ],[
             InlineKeyboardButton(text='Exit', callback_data=str(self.EXIT))
         ]]
@@ -361,7 +399,12 @@ class ConfigConversation (object):
                     CallbackQueryHandler(self.add_start, pattern='^%s$' % self.ADD, pass_user_data=True),
                     # CallbackQueryHandler(self.edit, pattern='^%s$' % self.EDIT, pass_user_data=True),
                     CallbackQueryHandler(self.remove_start, pattern='^%s$' % self.REMOVE, pass_user_data=True),
-                    # CallbackQueryHandler(self.copy, pattern='^%s$' % self.COPY, pass_user_data=True)
+                    CallbackQueryHandler(self.copy_start, pattern='^%s$' % self.COPY, pass_user_data=True)
+                ],
+                self.COPY_HANDLER: [
+                    CallbackQueryHandler(self.copy_select_handler, pattern='^[\d]+$', pass_user_data=True),
+                    CallbackQueryHandler(self.copy_tick_handler, pattern='^_1_[\d]+$', pass_user_data=True),
+                    CallbackQueryHandler(self.copy_msg_handler, pattern='^_0_[\d]+$', pass_user_data=True)
                 ],
                 self.REMOVE_HANDLER: [
                     CallbackQueryHandler(self.remove_end, pattern='^_[01]_[\d]+$', pass_user_data=True)

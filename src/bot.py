@@ -4,11 +4,31 @@ import traceback
 
 from datetime import datetime, timedelta
 
-from logger import Logger
-from cache import Cache
+from data import Logger, Cache
 from config import Config
 from configConversation import ConfigConversation
 from exceptions import FilterException
+
+from handlers.messageHandler import MessageHandler
+from handlers import MakeSenderBotAdmin
+
+
+class SelfJoinedChat (MessageHandler):
+    '''
+    It makes no sense that users add this filter to their configs, as it can only be added after the bot has already joined.
+    '''
+    def __init__(self, children):
+        super(SelfJoinedChat, self).__init__(children)
+
+    def call(self, bot, message, target, exclude):
+        if message.new_chat_members:
+            try:
+                next(filter(lambda usr: usr.id == bot.id, message.new_chat_members))
+                return self.propagate(bot, message, target, exclude)
+            except StopIteration as e:
+                raise FilterException()
+        else:
+            raise FilterException()
 
 class CurryBot (object):
     def __init__(self):
@@ -21,6 +41,7 @@ class CurryBot (object):
 
         self._chat_message_handlers = {}
         self._tick_handlers = {}
+        self._init_admin_handler = SelfJoinedChat([MakeSenderBotAdmin()])
 
     def set_token(self, token):
         self.updater = Updater(token, user_sig_handler=lambda s, f, self=self: self.on_exit())
@@ -70,7 +91,7 @@ class CurryBot (object):
     def on_receive(self, bot, update):
         chat = update.message.chat
         if chat.title:  # If not private chat
-            Config.set_chat_title(chat.id, chat.title)
+            Cache.set_chat_title(chat.id, chat.title)
 
         if update.message:
             message = update.message
@@ -95,7 +116,9 @@ class CurryBot (object):
         '''
         Global message handler.
         Forwards the messages to the other handlers if applicable.
+        Always calls the handler that checks if the bot was added to a group.
         '''
+        self.call_handler(self._init_admin_handler, bot, message)
 
         chat_id = str(message.chat.id)
         if chat_id in self._chat_message_handlers:

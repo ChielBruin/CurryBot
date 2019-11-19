@@ -1,9 +1,8 @@
 import sys
 
 from bot import CurryBot
-from cache import Cache
+from data import Cache, Logger
 from config import Config
-from logger import Logger
 
 
 def main():
