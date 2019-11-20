@@ -161,6 +161,10 @@ class RandomMessageHandler (MessageHandler):
 
         return (id, val)
 
+    def list_options(self):
+        vals = Cache.get(self._id)
+        return [vals[key] for key in vals]
+
     def _select_random_id(self, exclude):
         '''
         Select a random id excluding the ones in `exclude`.

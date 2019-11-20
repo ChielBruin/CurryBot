@@ -179,6 +179,7 @@ class ConfigConversation (object):
             if isinstance(res, Send):
                 self.send_or_edit(bot, user_data, msg, res.msg, res.buttons)
                 return self.ADD_HANDLER_STEP
+
             elif isinstance(res, Done):
                 user_data['acc'] = res.handler
                 user_data['stack'] = user_data['stack'][:-1]
@@ -228,6 +229,11 @@ class ConfigConversation (object):
     def add_handler_callback(self, bot, update, user_data):
         query = update.callback_query
         user_data['stack'].append( (0, None, int(query.data)) )
+        return self.handle_stack(bot, query.message, user_data)
+
+    def add_handler_button_callback(self, bot, update, user_data):
+        query = update.callback_query
+        user_data['acc'] = query.data
         return self.handle_stack(bot, query.message, user_data)
 
     def add_handler_message(self, bot, update, user_data):
@@ -416,6 +422,7 @@ class ConfigConversation (object):
                 ],
                 self.ADD_HANDLER_STEP: [
                     CallbackQueryHandler(self.add_handler_callback, pattern='^[0-9]+$', pass_user_data=True),
+                    CallbackQueryHandler(self.add_handler_button_callback, pattern='^[a-zA-Z].*$', pass_user_data=True),
                     MessageHandler(Filters.all, self.add_handler_message, pass_user_data=True)
                 ],
                 self.ADD_HANDLER_CHILD: [

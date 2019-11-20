@@ -60,7 +60,7 @@ class Cache(object):
             'keys'  : cls.chat_keys,
             'api'  : cls.api_keys
         }
-        
+
         for cache_entry in cls._cache:
             if cache_entry in cls._save_cache and cls._save_cache[cache_entry] is True:
                 cache['cache'][cache_entry] = cls._cache[cache_entry]
@@ -223,7 +223,6 @@ class Cache(object):
     @classmethod
     def _get_single(cls, key):
         return cls._cache[key]
-
 
     @classmethod
     def _add_padding(cls, text):

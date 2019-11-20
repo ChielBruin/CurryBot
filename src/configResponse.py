@@ -1,10 +1,18 @@
 from telegram import InlineKeyboardMarkup
+import re
 
 
 class Send (object):
     def __init__(self, msg=None, buttons=None):
         self.msg = msg if msg else ''
-        self.buttons = InlineKeyboardMarkup(buttons) if buttons else None
+        if buttons is None:
+            self.buttons = None
+        else:
+            for button_row in buttons:
+                for button in button_row:
+                    if not re.match(r'[A-Za-z].*', button.callback_data):
+                        raise Exception('Invalid button argument \'%s\', must start with a letter' % button.callback_data)
+            self.buttons = buttons
 
 class AskChild (object):
     pass

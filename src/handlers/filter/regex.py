@@ -4,6 +4,7 @@ from ..messageHandler import MessageHandler
 from exceptions import FilterException
 
 from configResponse import Send, Done, AskChild, NoChild, CreateException
+from telegram import InlineKeyboardButton, Message
 
 class AbstractRegexFilter (MessageHandler):
     def __init__(self, regex, children=[], group=None):
@@ -37,24 +38,30 @@ class AbstractRegexFilter (MessageHandler):
         elif stage is 1 and arg:
             if arg.text:
                 try:
-                    re.compile(arg.text)
-                    return (2, arg.text, Send('Should the message be replaced by one of the captured groups? Send \'no\' or the group id to capture'))
+                    pattern = re.compile(arg.text)
+                    groups = list(range(pattern.groups + 1)) + list(pattern.groupindex.keys())
+                    print(groups)
+                    if len(groups) > 1:
+                        buttons = [[InlineKeyboardButton(text=str(group), callback_data='r_' + str(group))] for group in groups]
+                        msg = 'Select a captured group to replace the original message, select group 0 to retain the entire match'
+                        return (2, arg.text, Send(msg=msg, buttons=buttons))
+                    else:
+                        return (3, (data, None, []), AskChild())
                 except re.error:
                     return (1, None, Send('Invalid expression, try again'))
             else:
                 return (1, data, Send('Please send text and nothing else'))
         elif stage is 2 and arg:
-            if arg.text:
-                if re.match(r'[Nn]o$', arg.text):
+            if isinstance(arg, Message):
+                raise CreateException() #TODO: resend the buttons
+            arg = arg[2:]
+            try:
+                group = int(arg)
+                if group < 0:
                     group = None
-                else:
-                    try:
-                        group = int(arg.text)
-                    except:
-                        group = arg.text
-                return (3, (data, group, []), AskChild())
-            else:
-                return (2, data, Send('You should at least attempt to send some text'))
+            except:
+                group = arg
+            return (3, (data, group, []), AskChild())
         elif stage is 3 and isinstance(arg, MessageHandler):
             data[2].append(arg)
             return (3, data, AskChild())
@@ -84,7 +91,7 @@ class MatchFilter (AbstractRegexFilter):
     @classmethod
     def _from_dict(cls, dict, children):
         regex = dict['regex']
-        group = None if dict['group'] == 'None' else dict['group']
+        group = dict['group']
         return MatchFilter(regex, children, group=group)
 
 

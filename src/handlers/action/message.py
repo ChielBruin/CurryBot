@@ -1,6 +1,8 @@
+from telegram import InlineKeyboardButton, Message
+
 from ..messageHandler import MessageHandler, RandomMessageHandler
 from configResponse import Send, Done, AskChild, CreateException
-import re
+from data import Cache
 
 
 class AbstractSendMessage (RandomMessageHandler):
@@ -9,6 +11,7 @@ class AbstractSendMessage (RandomMessageHandler):
         self.add_options(messages)
         self.parse_mode = parse_mode
         self.show_preview = show_preview
+        Cache.config_entry(self._id, False)
 
     def apply_message(self, message_text, reply_text):
         '''
@@ -39,20 +42,24 @@ class AbstractSendMessage (RandomMessageHandler):
 
     @classmethod
     def create(cls, stage, data, arg):
+        buttons = [[InlineKeyboardButton(text='yes', callback_data='yes'), InlineKeyboardButton(text='no', callback_data='no')]]
         if stage is 0:
             return (1, None, Send('Please send me the text to reply'))
         elif stage is 1 and arg:
             if not arg.text:
                 return (1, None, Send('Please reply with text, not with something else'))
-            return (2, arg.text, Send('Should previews be shown for URLs?'))
+            return (2, arg.text, Send('Should previews be shown for URLs?', buttons=buttons))
         elif stage is 2 and arg:
-            if not arg.text or not re.match(r'yes|no', arg.text):
-                return (2, data, Send('Please reply with yes or no'))
-            return (-1, None, Done(cls._create(data, arg.text == 'yes')))
+            if isinstance(arg, Message):
+                return (2, data, Send('Please reply by clicking the buttons', buttons=buttons))
+            else:
+                return (-1, None, Done(cls._create(data, arg == 'yes')))
         else:
             print(stage, data, arg)
             raise CreateException('Invalid create state for sendTextMessage')
 
+    def _to_dict(self):
+        return {'messages': self.list_options(), 'preview': 1 if self.show_preview else 0}
 
 class SendTextMessage (AbstractSendMessage):
     def __init__(self, message, show_preview=True):
@@ -66,6 +73,10 @@ class SendTextMessage (AbstractSendMessage):
     def _create(cls, msg, show_preview):
         return SendTextMessage(msg, show_preview)
 
+    @classmethod
+    def _from_dict(cls, dict, children):
+        return SendTextMessage(dict['messages'], dict['preview'] is 1)
+
 class SendMarkdownMessage (AbstractSendMessage):
     def __init__(self, message, show_preview=True):
         super(SendMarkdownMessage, self).__init__(message, parse_mode='Markdown', show_preview=show_preview)
@@ -77,6 +88,10 @@ class SendMarkdownMessage (AbstractSendMessage):
     @classmethod
     def _create(cls, msg, show_preview):
         return SendMarkdownMessage(msg, show_preview)
+
+    @classmethod
+    def _from_dict(cls, dict, children):
+        return SendMarkdownMessage(dict['messages'], dict['preview'] is 1)
 
 class SendHTMLMessage (AbstractSendMessage):
     def __init__(self, message, show_preview=True):
@@ -90,30 +105,6 @@ class SendHTMLMessage (AbstractSendMessage):
     def _create(cls, msg, show_preview):
         return SendHTMLMessage(msg, show_preview)
 
-
-class Forward (MessageHandler):
-    '''
-    An action that forwards a message.
-    '''
-
-    def __init__(self, chat_id, msg_id):
-        '''
-        Load all the messages from the given config
-        '''
-        super(ForwardAction, self).__init__([])
-        self.chat_id = chat_id
-        self.msg_id = msg_id
-
-    def call(self, bot, msg, target, exclude):
-        if target:
-            raise Exception('You cannot reply using a forwarded message')
-        bot.forward_message(chat_id=msg.chat.id, from_chat_id=self.chat_id, message_id=self.msg_id)
-        return [self.id]
-
     @classmethod
-    def is_entrypoint(cls):
-        return False
-
-    @classmethod
-    def get_name(cls):
-        return "Forward a message"
+    def _from_dict(cls, dict, children):
+        return SendHTMLMessage(dict['messages'], dict['preview'] is 1)

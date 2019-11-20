@@ -24,8 +24,8 @@ def main():
     Config.set_config_location(cache_dir)
     Cache.set_cache_location(cache_dir)
 
-    Config.load_config(curry_bot)
     Cache.load_cache()
+    Config.load_config(curry_bot)
 
     curry_bot.start()
 
