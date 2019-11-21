@@ -18,7 +18,6 @@ def main():
 
     try:
         config = json.load(args.config)
-        print(config)
     except json.JSONDecodeError:
         Logger.log_error('Invalid configuration file')
         return

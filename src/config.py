@@ -24,12 +24,10 @@ class Config (object):
             chat_handlers = bot._chat_message_handlers[chat_id]
             for (name, handler) in chat_handlers:
                 handlers[chat_id][name] = handler.to_dict()
-        print(handlers)
 
         tick_handlers = {}
         for (name, handler) in bot._tick_handlers:
             tick_handlers[name] = handler.to_dict()
-        print(tick_handlers)
 
         config = {
             'handlers': handlers,
