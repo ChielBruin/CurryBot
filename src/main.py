@@ -1,4 +1,4 @@
-import sys
+import argparse, json, os
 
 from bot import CurryBot
 from data import Cache, Logger
@@ -10,13 +10,43 @@ def main():
     Main function.
     Loads the config and starts the bot.
     '''
-    api_key = input('Telegram API key:')
-    cache_dir = input('Cache directory:')
-    cipher_pwd = input('Encryption key for secure cache (leave empty to skip, not recommended)')
 
-    # TODO:
-    #  - Padd the password if too short, error if too long
-    #  - Check if cache dir exists
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('config', type=argparse.FileType('r'))
+    args = parser.parse_args()
+
+    try:
+        config = json.load(args.config)
+        print(config)
+    except json.JSONDecodeError:
+        Logger.log_error('Invalid configuration file')
+        return
+
+    if 'API-token' not in config:
+        Logger.log_error('No API token present in configuration')
+        return
+    api_key = config['API-token']
+
+    if 'cache-dir' not in config:
+        Logger.log_error('No cache directory present in configuration')
+        return
+    cache_dir = config['cache-dir']
+    if not os.path.exists(cache_dir):
+        os.makedirs(cache_dir)
+
+    if not os.path.isdir(cache_dir):
+        Logger.log_error('Cache directory is a file, not a folder')
+        return
+
+    if 'encryption-key' in config:
+        encryption_key = config['encryption-key']
+    else:
+        encryption_key = input('Enter encryption key for secure cache:\n')
+    if len(encryption_key) > 32:
+        Logger.log_error('Encryption key too long. (For some reason it is not allowed)')
+    encryption_key = (encryption_key * (32 // len(encryption_key) + 1))[0:32] # Repeat password to make it 32 characters long
+    Cache.set_cipher_pwd(encryption_key)
 
     curry_bot = CurryBot()
     curry_bot.set_token(api_key)
