@@ -1,5 +1,6 @@
 from telegram.ext import Updater, Filters, CallbackQueryHandler
 from telegram.ext import MessageHandler as TelegramMessageHandler
+from telegram import Chat, Message
 import traceback
 
 from datetime import datetime, timedelta
@@ -73,7 +74,7 @@ class CurryBot (object):
     def register_tick_handler(self, chat, handler, name):
         self._register_handler(self._tick_handlers, chat, handler, name)
 
-    def register_tick_handler(self, chat, name):
+    def remove_tick_handler(self, chat, name):
         self._remove_handler(self._tick_handlers, chat, name)
 
     def _remove_handler(self, dict, chat, handler_name):
