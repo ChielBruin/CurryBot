@@ -100,6 +100,9 @@ class CurryBot (object):
             message = update.edited_message
         else:
             return
+        if message.caption:
+            message.text = message.caption
+        
         self.on_receive_message(bot, message)
 
     def call_handler(self, handler, bot, message):
