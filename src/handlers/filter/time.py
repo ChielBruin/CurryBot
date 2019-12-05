@@ -71,7 +71,6 @@ class TimeFilter (MessageHandler):
                         raise ValueError()
                     data.append(val)
                     if next_string is None:
-                        print('Done!')
                         return data
                     else:
                         return (stage + 1, data, Send('Do you want to filter on the %s?' % next_string, buttons=buttons))

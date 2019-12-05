@@ -73,6 +73,9 @@ class Handler (object):
         Some handlers should not be copied to other chats, as this will expose their API keys.
         These handlers should return True.
         '''
+        for child in self.children:
+            if child.is_private():
+                return True
         return False
 
     @classmethod
