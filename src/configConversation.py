@@ -364,6 +364,7 @@ class ConfigConversation (object):
                         (key, value) = res.handler
                         user_data['acc'] = key
                         Cache.config_entry(key, True)
+                        Cache.add_api_key(key, user_data['chat_id'])
                         Cache.put(key, value, encrypt=True)
 
                         user_data['stack'] = user_data['stack'][:-1]

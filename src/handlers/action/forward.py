@@ -44,7 +44,6 @@ class Forward (MessageHandler):
         if stage is 0:
             return (1, None, Send('Please forward the message to forward'))
         elif stage is 1 and arg:
-            print(arg)
             if not arg.forward_from:
                 return (1, None, Send('Please forward a message'))
             return (-1, None, Done(Forward(arg.chat.id, arg.message_id)))

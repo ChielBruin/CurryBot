@@ -58,7 +58,8 @@ class Cache(object):
             'admins': cls.chat_admins,
             'titles': cls.chat_titles,
             'keys'  : cls.chat_keys,
-            'api'  : cls.api_keys
+            'api'   : cls.api_keys,
+            'cache' : {}
         }
 
         for cache_entry in cls._cache:

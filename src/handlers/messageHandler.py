@@ -117,39 +117,25 @@ class RandomMessageHandler (MessageHandler):
     def clear(self):
         Cache.clear(self._id)
 
-    def add_options(self, options, get_value=None, include=None, exclude=[]):
+    def add_options(self, options, get_value=None):
         if isinstance(options, list):
-            self._add_options(options, get_value, include, exclude)
+            self._add_options(options, get_value)
         else:
-            self._add_options([options], get_value, include, exclude)
+            self._add_options([options], get_value)
 
-    def _add_options(self, options, get_value, include, exclude):
+    def _add_options(self, options, get_value):
         """
         options == [(k, v)] -> direct key value store
         options == [v] && get_value == None -> store values indexed
         options == [x] && get_value == lambda(x) -> store result of lambda indexed
         """
 
-        # If no include filter is given, make sure the include filter contains all keys
-        if not include:
-            include = []
-            for option in options:
-                if isinstance(option, tuple):
-                    (key, _) = option
-                    include.append(key)
-                else:
-                    include.append(option)
-
         for idx, option in enumerate(options):
             idx = '%s_%d' % (self._id, idx)
             if isinstance(option, tuple):
                 (key, val) = option
-                if key not in include or key in include:
-                    continue
                 Cache.put([self._id, key], val)
             else:
-                if option not in include or option in exclude:
-                    continue
                 if get_value is None:
                     Cache.put([self._id, idx], option)
                 else:
