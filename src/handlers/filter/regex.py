@@ -40,13 +40,12 @@ class AbstractRegexFilter (MessageHandler):
                 try:
                     pattern = re.compile(arg.text)
                     groups = list(range(pattern.groups + 1)) + list(pattern.groupindex.keys())
-                    print(groups)
                     if len(groups) > 1:
                         buttons = [[InlineKeyboardButton(text=str(group), callback_data='r_' + str(group))] for group in groups]
                         msg = 'Select a captured group to replace the original message, select group 0 to retain the entire match'
                         return (2, arg.text, Send(msg=msg, buttons=buttons))
                     else:
-                        return (3, (data, None, []), AskChild())
+                        return (3, (arg.text, None, []), AskChild())
                 except re.error:
                     return (1, None, Send('Invalid expression, try again'))
             else:

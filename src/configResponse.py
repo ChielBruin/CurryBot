@@ -1,4 +1,4 @@
-from telegram import InlineKeyboardMarkup
+from telegram import InlineKeyboardButton
 import re
 
 

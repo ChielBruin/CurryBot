@@ -1,4 +1,4 @@
-from messageHandler import MessageHandler
+from ..messageHandler import MessageHandler
 from exceptions     import FilterException
 
 from configResponse import Send, Done, AskChild, NoChild, CreateException

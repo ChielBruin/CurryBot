@@ -8,9 +8,9 @@ import datetime
 import re
 import ast
 
-from messageHandler import MessageHandler
-from logger import Logger
-from cache import Cache
+from ..messageHandler import MessageHandler
+from data.logger import Logger
+from data.cache import Cache
 from configResponse import Send, Done, AskChild, AskCacheKey, AskAPIKey, NoChild, CreateException
 
 
