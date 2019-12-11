@@ -3,6 +3,8 @@ import re
 
 
 class Send (object):
+    YES_NO = [[InlineKeyboardButton(text='yes', callback_data='yes'), InlineKeyboardButton(text='no', callback_data='no')]]
+
     def __init__(self, msg=None, buttons=None):
         self.msg = msg if msg else ''
         if buttons is None:
