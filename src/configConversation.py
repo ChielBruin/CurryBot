@@ -121,19 +121,25 @@ class ConfigConversation (object):
     def add_start(self, bot, update, user_data):
         buttons = [[
          InlineKeyboardButton(text='Every minute', callback_data='0'),
-         InlineKeyboardButton(text='Every message', callback_data='1')
+         InlineKeyboardButton(text='Every message', callback_data='1'),
+         InlineKeyboardButton(text='Button press', callback_data='2')
         ]]
-        self.send_or_edit(bot, user_data, update.callback_query.message, 'Should the rule trigger on receiving a message or every minute', buttons=buttons)
+        self.send_or_edit(bot, user_data, update.callback_query.message, 'Should the rule trigger on receiving a message, every minute or when a button is pressed?', buttons=buttons)
         return self.ADD_HANDLER_INITIAL
 
     def add_initial_type_msg(self, bot, update, user_data):
         message = update.callback_query.message
-        user_data['is_tick'] = False
+        user_data['type'] = 'msg'
         return self._add_initial_type(bot, message, user_data)
 
     def add_initial_type_tick(self, bot, update, user_data):
         message = update.callback_query.message
-        user_data['is_tick'] = True
+        user_data['type'] = 'tick'
+        return self._add_initial_type(bot, message, user_data)
+
+    def add_initial_type_button(self, bot, update, user_data):
+        message = update.callback_query.message
+        user_data['type'] = 'button'
         return self._add_initial_type(bot, message, user_data)
 
     def _add_initial_type(self, bot, message, data):
@@ -172,12 +178,21 @@ class ConfigConversation (object):
             handler = user_data['acc']
             chat_id = user_data['chat_id']
             name = user_data['name']
-            if user_data['is_tick']:
+            type = user_data['type']
+            if type == 'tick':
                 self.bot.register_tick_handler(chat=chat_id, handler=handler, name=name)
                 Logger.log_info('Added tick handler \'%s\'' % name)
-            else:
+            elif type == 'msg':
                 self.bot.register_message_handler(chat=chat_id, name=name, handler=handler)
                 Logger.log_info('Added message handler \'%s\'' % name)
+            elif type == 'button':
+                self.bot.register_button_handler(chat=chat_id, name=name, handler=handler)
+                Logger.log_info('Added button handler \'%s\'' % name)
+            else:
+                message = 'Unknown handler type %s' % type
+                Logger.print_error(message)
+                self.send_or_edit(bot, user_data, msg, message)
+                return ConversationHandler.END
             self.send_or_edit(bot, user_data, msg, 'Hander added!')
             return ConversationHandler.END
 
@@ -431,6 +446,7 @@ class ConfigConversation (object):
                 self.ADD_HANDLER_INITIAL: [
                     CallbackQueryHandler(self.add_initial_type_tick, pattern='^0$', pass_user_data=True),
                     CallbackQueryHandler(self.add_initial_type_msg, pattern='^1$', pass_user_data=True),
+                    CallbackQueryHandler(self.add_initial_type_button, pattern='^2$', pass_user_data=True),
                     MessageHandler(Filters.all, self.add_initial, pass_user_data=True)
                 ],
                 self.ADD_HANDLER_STEP: [

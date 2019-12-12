@@ -42,6 +42,7 @@ class CurryBot (object):
 
         self._chat_message_handlers = {}
         self._tick_handlers = {}
+        self._button_handlers = {}
         self._init_admin_handler = SelfJoinedChat([MakeSenderBotAdmin()])
 
     def set_token(self, token):
@@ -50,6 +51,8 @@ class CurryBot (object):
         self.bot = self.updater.bot
 
         self.dispatcher.add_handler(ConfigConversation(self).get_conversation_handler())
+        self.dispatcher.add_handler(CallbackQueryHandler(
+                            (lambda bot, update, self=self: self.on_receive_callback(bot, update))))
         self.dispatcher.add_handler(TelegramMessageHandler(Filters.all,
                             (lambda bot, update, self=self: self.on_receive(bot, update))))
 
@@ -64,6 +67,12 @@ class CurryBot (object):
             return self._chat_message_handlers[chat_id]
         else:
             return []
+
+    def register_button_handler(self, chat, handler, name):
+        self._register_handler(self._button_handlers, chat, handler, name)
+
+    def remove_button_handler(self, chat, name):
+        self._remove_handler(self._button_handlers, chat, name)
 
     def register_message_handler(self, chat, handler, name):
         self._register_handler(self._chat_message_handlers, chat, handler, name)
@@ -90,19 +99,20 @@ class CurryBot (object):
             dict[chat] = [(name, handler)]
 
     def on_receive(self, bot, update):
-        chat = update.message.chat
-        if chat.title:  # If not private chat
-            Cache.set_chat_title(chat.id, chat.title)
-
         if update.message:
             message = update.message
         elif update.edited_message:
             message = update.edited_message
         else:
             return
+
+        chat = update.message.chat
+        if chat.title:  # If not private chat
+            Cache.set_chat_title(chat.id, chat.title)
+
         if message.caption:
             message.text = message.caption
-        
+
         self.on_receive_message(bot, message)
 
     def call_handler(self, handler, bot, message):
@@ -127,6 +137,14 @@ class CurryBot (object):
         chat_id = str(message.chat.id)
         if chat_id in self._chat_message_handlers:
             for (_, handler) in self._chat_message_handlers[chat_id]:
+                self.call_handler(handler, bot, message)
+
+    def on_receive_callback(self, bot, update):
+        query = update.callback_query
+        message = Message(-1, query.from_user, query.message.date, query.message.chat, text=query.data)
+        chat_id = str(query.message.chat.id)
+        if chat_id in self._button_handlers:
+            for (_, handler) in self._button_handlers[chat_id]:
                 self.call_handler(handler, bot, message)
 
     def on_receive_tick(self, bot, job):

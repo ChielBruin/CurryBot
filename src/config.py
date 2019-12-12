@@ -25,6 +25,13 @@ class Config (object):
             for (name, handler) in chat_handlers:
                 handlers[chat_id][name] = handler.to_dict()
 
+        button_handlers = {}
+        for chat_id in bot._chat_message_handlers:
+            button_handlers[chat_id] = {}
+            chat_handlers = bot._chat_message_handlers[chat_id]
+            for (name, handler) in chat_handlers:
+                button_handlers[chat_id][name] = handler.to_dict()
+
         tick_handlers = {}
         for chat_id in bot._tick_handlers:
             tick_handlers[chat_id] = {}
@@ -34,7 +41,8 @@ class Config (object):
 
         config = {
             'handlers': handlers,
-            'tick_handlers': tick_handlers
+            'tick_handlers': tick_handlers,
+            'button_handlers': button_handlers
         }
         with open(cls.config_location, 'w') as config_file:
             Logger.log_debug('Writing config to disk')
@@ -59,6 +67,14 @@ class Config (object):
                         handler_dict = chat_handlers[handler_name]
                         handler = MessageHandler.class_from_dict(handler_dict).from_dict(handler_dict)
                         bot.register_message_handler(chat_id, handler, handler_name)
+
+                handlers = config['button_handlers'] if 'button_handlers' in config else {}
+                for chat_id in handlers:
+                    chat_handlers = handlers[chat_id]
+                    for handler_name in chat_handlers:
+                        handler_dict = chat_handlers[handler_name]
+                        handler = MessageHandler.class_from_dict(handler_dict).from_dict(handler_dict)
+                        bot.register_button_handler(chat_id, handler, handler_name)
 
                 handlers = config['tick_handlers'] if 'tick_handlers' in config else {}
                 for chat_id in handlers:
