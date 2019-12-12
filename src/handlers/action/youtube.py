@@ -45,7 +45,7 @@ class YtPlaylistAppend (MessageHandler):
             Logger.log_exception(ex, msg='Error while authorizing YouTube API')
 
 
-    def _playlist_add(self, video_id, attempts=0):
+    def _playlist_add(self, video_id, chat_id, attempts=0):
         try:
             request = self.youtube.playlistItems().insert(
                 part='snippet',
@@ -65,13 +65,13 @@ class YtPlaylistAppend (MessageHandler):
             # On Broken Pipe error, retry
             if e.errno == errno.EPIPE:
                 if attempts < 3:
-                    self._playlist_add(video_id, attempts=attempts+1)
+                    self._playlist_add(video_id, chat_id, attempts=attempts+1)
                 else:
-                    Logger.log_error('Adding YouTube video to playlist failed with broken pipe')
+                    Logger.log_error('Adding YouTube video to playlist failed with broken pipe', chat=chat_id)
 
 
     def call(self, bot, msg, reply_to, exclude):
-        self._playlist_add(msg.text)
+        self._playlist_add(msg.text, msg.chat.id)
         return []
 
     @classmethod

@@ -20,33 +20,37 @@ class Logger(object):
         cls.bot = bot
 
     @classmethod
-    def log_exception(cls, ex, msg):
+    def log_exception(cls, ex, msg, chat=None):
         text = (msg + '\n' if msg else '') + str(type(ex).__name__) + ': ' + str(ex)
-        cls.log_error(text)
+        cls.log_error(text, chat=None)
 
     @classmethod
-    def log_trace(cls, msg, details=None):
-        cls._log(0, msg, details)
+    def log_trace(cls, msg, details=None, chat=None):
+        cls._log(0, msg, details, chat)
 
     @classmethod
-    def log_debug(cls, msg, details=None):
-        cls._log(1, msg, details)
+    def log_debug(cls, msg, details=None, chat=None):
+        cls._log(1, msg, details, chat)
 
     @classmethod
-    def log_info(cls, msg, details=None):
-        cls._log(2, msg, details)
+    def log_info(cls, msg, details=None, chat=None):
+        cls._log(2, msg, details, chat)
 
     @classmethod
-    def log_warning(cls, msg, details=None):
-        cls._log(3, msg, details)
+    def log_warning(cls, msg, details=None, chat=None):
+        cls._log(3, msg, details, chat)
 
     @classmethod
-    def log_error(cls, msg, details=None):
-        cls._log(4, msg, details)
+    def log_error(cls, msg, details=None, chat=None):
+        cls._log(4, msg, details, chat)
 
     @classmethod
-    def _log(cls, level, msg, details, console_only=False):
+    def _log(cls, level, msg, details, chat, console_only=False):
         (level_str, level_color) = cls._get_level_string(level)
+        if (not chat is None) and not console_only:
+            line = '*[%s]*\t- %s' % (level_str, msg.replace('_', '\\_'))
+            cls.bot.send_message(chat_id=chat, text=line, parse_mode='Markdown')
+
         for chat_id in cls._log_handlers:
             if level < cls._log_handlers[chat_id]:
                 continue

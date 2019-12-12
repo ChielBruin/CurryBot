@@ -123,7 +123,7 @@ class CurryBot (object):
         except FilterException:
             pass
         except Exception as ex:
-            Logger.log_exception(ex, msg='Exception while handling message')
+            Logger.log_exception(ex, msg='Exception while handling message', chat=message.chat.id)
             traceback.print_exc()
 
     def on_receive_message(self, bot, message):
