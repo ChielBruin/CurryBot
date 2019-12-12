@@ -7,6 +7,7 @@ import json
 import datetime
 import re
 import ast
+import errno
 
 from ..messageHandler import MessageHandler
 from data.logger import Logger
@@ -44,21 +45,30 @@ class YtPlaylistAppend (MessageHandler):
             Logger.log_exception(ex, msg='Error while authorizing YouTube API')
 
 
-    def _playlist_add(self, video_id):
-        request = self.youtube.playlistItems().insert(
-        part='snippet',
-        body={
-          'snippet': {
-            'playlistId': self.playlist,
-            'position': 0,
-            'resourceId': {
-              'kind': 'youtube#video',
-              'videoId': video_id
-              }
-          }
-        }
-        )
-        response = request.execute()
+    def _playlist_add(self, video_id, attempts=0):
+        try:
+            request = self.youtube.playlistItems().insert(
+                part='snippet',
+                body={
+                  'snippet': {
+                    'playlistId': self.playlist,
+                    'position': 0,
+                    'resourceId': {
+                      'kind': 'youtube#video',
+                      'videoId': video_id
+                      }
+                  }
+                }
+            )
+            response = request.execute()
+        except IOError as e:
+            # On Broken Pipe error, retry
+            if e.errno == errno.EPIPE:
+                if attempts < 3:
+                    self._playlist_add(video_id, attempts=attempts+1)
+                else:
+                    Logger.log_error('Adding YouTube video to playlist failed with broken pipe')
+
 
     def call(self, bot, msg, reply_to, exclude):
         self._playlist_add(msg.text)
