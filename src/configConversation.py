@@ -318,7 +318,8 @@ class ConfigConversation (object):
                     return self.ADD_HANDLER_CACHE_KEY
                 else:
                     user_data['acc'] = key
-                    Cache.put(key, None)
+                    if not Cache.contains(key):
+                        Cache.put(key, None)
                     Cache.add_chat_key(key, user_data['chat_id'])
                     return self.handle_stack(bot, update.message, user_data)
             except Exception as ex:
