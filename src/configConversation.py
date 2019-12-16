@@ -319,6 +319,7 @@ class ConfigConversation (object):
             else:
                 default = user_data['acc']
                 user_data['acc'] = key
+                Cache.config_entry(key, True)
                 if not Cache.contains(key):
                     Cache.put(key, default)
                 Cache.add_chat_key(key, user_data['chat_id'])
