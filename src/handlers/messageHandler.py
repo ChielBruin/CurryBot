@@ -5,7 +5,7 @@ from telegram import Message, Chat
 
 from exceptions import FilterException
 from configResponse import CreateException
-from data import Cache
+from data import Cache, Logger
 
 class Handler (object):
     def __init__(self, children=[]):
@@ -30,7 +30,12 @@ class Handler (object):
         res = []
         do_copy = len(self.children) > 1
         for child in self.children:
-            res.extend(child.call(bot, message, target, copy.copy(exclude) if do_copy else exclude))
+            res = child.call(bot, message, target, copy.copy(exclude) if do_copy else exclude)
+            if res is None:
+                print(child)
+                Logger.log_error(msg='Handler returned None instead of [..]', chat=message.chat.id)
+            else:
+                res.extend(res)
         return res
 
     def on_children_update(self, children):

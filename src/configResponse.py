@@ -23,7 +23,8 @@ class NoChild (object):
     pass
 
 class AskCacheKey (object):
-    pass
+    def __init__(self, default):
+        self.default = default
 
 class AskAPIKey (object):
     pass

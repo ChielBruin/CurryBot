@@ -224,6 +224,7 @@ class ConfigConversation (object):
                 return self.ADD_HANDLER_CHILD
 
             elif isinstance(res, AskCacheKey):
+                user_data['acc'] = res.default
                 buttons = [
                     [InlineKeyboardButton(text='Create own key', callback_data=str(self.ADD))],
                     [InlineKeyboardButton(text='Use existing key', callback_data=str(self.COPY))]
@@ -311,19 +312,17 @@ class ConfigConversation (object):
         user_data['user_msg'] = True
         if update.message.text:
             key = update.message.text.strip()
-            try:
-                if Cache.contains(key) or len(key) >= 32 or key.startswith('$'):
-                    message = 'Invalid key. Either it is already in use, starts with a $, or it is too long'
-                    self.send_or_edit(bot, user_data, update.message, message)
-                    return self.ADD_HANDLER_CACHE_KEY
-                else:
-                    user_data['acc'] = key
-                    if not Cache.contains(key):
-                        Cache.put(key, None)
-                    Cache.add_chat_key(key, user_data['chat_id'])
-                    return self.handle_stack(bot, update.message, user_data)
-            except Exception as ex:
-                print(ex)
+            if Cache.contains(key) or len(key) >= 32 or key.startswith('$'):
+                message = 'Invalid key. Either it is already in use, starts with a $, or it is too long'
+                self.send_or_edit(bot, user_data, update.message, message)
+                return self.ADD_HANDLER_CACHE_KEY
+            else:
+                default = user_data['acc']
+                user_data['acc'] = key
+                if not Cache.contains(key):
+                    Cache.put(key, default)
+                Cache.add_chat_key(key, user_data['chat_id'])
+                return self.handle_stack(bot, update.message, user_data)
         else:
             message = 'Invalid key. It must contain text'
             self.send_or_edit(bot, user_data, update.message, message)
