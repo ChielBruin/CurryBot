@@ -26,9 +26,9 @@ class Config (object):
                 handlers[chat_id][name] = handler.to_dict()
 
         button_handlers = {}
-        for chat_id in bot._chat_message_handlers:
+        for chat_id in bot._button_handlers:
             button_handlers[chat_id] = {}
-            chat_handlers = bot._chat_message_handlers[chat_id]
+            chat_handlers = bot._button_handlers[chat_id]
             for (name, handler) in chat_handlers:
                 button_handlers[chat_id][name] = handler.to_dict()
 
