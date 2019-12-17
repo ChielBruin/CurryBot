@@ -11,7 +11,7 @@ from configConversation import ConfigConversation
 from exceptions import FilterException
 
 from handlers.messageHandler import MessageHandler
-from handlers import MakeSenderBotAdmin, IsCommand, SendTextMessage, SenderUsername, IsReply, SwapReply
+from handlers import MakeSenderBotAdmin, IsCommand, SendTextMessage, SenderUsername, IsReply, SwapReply, SenderIsBotAdmin
 
 
 class SelfJoinedChat (MessageHandler):
@@ -67,7 +67,7 @@ class CurryBot (object):
     def init_global_handlers(self):
         self._global_handlers = [
             SelfJoinedChat([MakeSenderBotAdmin(), SendTextMessage(['Hello everyone! Configure me by sending /config in private chat'], False, None)]),
-            IsCommand('/make_?[Aa]dmin', IsReply([SwapReply([MakeSenderBotAdmin(), SenderUsername(False, False, True, [SendTextMessage(['%s is now admin'], False, None)])])]))
+            IsCommand('/make_?[Aa]dmin', SenderIsBotAdmin([IsReply([SwapReply([MakeSenderBotAdmin(), SenderUsername(False, False, True, [SendTextMessage(['%s is now admin'], False, None)])])])]))
         ]
 
     def list_tick_handlers(self, chat_id):
