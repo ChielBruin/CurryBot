@@ -161,6 +161,7 @@ class Cache(object):
 
     @classmethod
     def add_api_key(cls, key, chat_id):
+        cls.config_entry(key, True)
         cls._add_key(cls.api_keys, key, chat_id)
 
     @classmethod
