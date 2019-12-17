@@ -6,7 +6,7 @@ from .rss       import SendRSS, SendReddit
 from .flickr    import SendFlickr
 from .vote      import UpVote, DownVote, GetVote
 from .monitor   import MonitorChatActivity, MonitorUserActivity
-from .sticker   import SendStickerPack
+from .sticker   import SendStickerPack, SendStickers
 
 __all__ = [
     'SendTextMessage', 'SendHTMLMessage', 'SendMarkdownMessage',
@@ -14,4 +14,4 @@ __all__ = [
     'SendRSS', 'SendReddit', 'SendFlickr',
     'UpVote', 'DownVote', 'GetVote',
     'MonitorChatActivity', 'MonitorUserActivity',
-    'SendStickerPack']
+    'SendStickerPack', 'SendStickers']
