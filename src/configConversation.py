@@ -21,7 +21,7 @@ class ConfigConversation (object):
         user_data['user_msg'] = False
         user = update.message.from_user
         message = update.message
-        Logger.log_info("User %s started config conversation." % user.first_name)
+        Logger.log_debug("User %s started config conversation." % user.first_name)
 
         chats = Cache.get_admin_chats(message.from_user.id)
         chat_names = [(chat_id, Cache.get_chat_title(chat_id)) for chat_id in chats]
