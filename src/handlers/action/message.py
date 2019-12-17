@@ -19,6 +19,14 @@ class AbstractSendMessage (RandomMessageHandler):
         Given the original message and the reply text pattern,
         try filling in the holes in the reply pattern.
         '''
+        user = message.from_user
+        if '%h' in reply_text and user.username:
+            reply_text = reply_text.replace('%h', user.username)
+        if '%f' in reply_text and user.first_name:
+            reply_text = reply_text.replace('%f', user.first_name)
+        if '%l' in reply_text and user.last_name:
+            reply_text = reply_text.replace('%l', user.last_name)
+
         if '%s' in reply_text:
             return reply_text % message_text
         else:
