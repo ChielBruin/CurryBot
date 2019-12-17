@@ -42,6 +42,13 @@ def main():
         encryption_key = config['encryption-key']
     else:
         encryption_key = input('Enter encryption key for secure cache:\n')
+
+    if 'admin-chat' in config:
+        admin_chat = config['admin-chat']
+    else:
+        admin_chat = None
+        Logger.log_warning('No admin chat configured')
+
     if len(encryption_key) > 32:
         Logger.log_error('Encryption key too long. (For some reason it is not allowed)')
     encryption_key = (encryption_key * (32 // len(encryption_key) + 1))[0:32] # Repeat password to make it 32 characters long
@@ -49,6 +56,7 @@ def main():
 
     curry_bot = CurryBot()
     curry_bot.set_token(api_key)
+    curry_bot.init_logger(admin_chat)
 
     Config.set_config_location(cache_dir)
     Cache.set_cache_location(cache_dir)

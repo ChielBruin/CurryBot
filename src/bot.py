@@ -11,7 +11,7 @@ from configConversation import ConfigConversation
 from exceptions import FilterException
 
 from handlers.messageHandler import MessageHandler
-from handlers import MakeSenderBotAdmin
+from handlers import MakeSenderBotAdmin, IsCommand, SendTextMessage, SenderUsername, IsReply, SwapReply
 
 
 class SelfJoinedChat (MessageHandler):
@@ -45,7 +45,7 @@ class CurryBot (object):
         self._chat_message_handlers = {}
         self._tick_handlers = {}
         self._button_handlers = {}
-        self._init_admin_handler = SelfJoinedChat([MakeSenderBotAdmin()])
+        self._global_handlers = None
 
     def set_token(self, token):
         self.updater = Updater(token, user_sig_handler=lambda s, f, self=self: self.on_exit())
@@ -57,6 +57,18 @@ class CurryBot (object):
                             (lambda bot, update, self=self: self.on_receive_callback(bot, update))))
         self.dispatcher.add_handler(TelegramMessageHandler(Filters.all,
                             (lambda bot, update, self=self: self.on_receive(bot, update))))
+
+    def init_logger(self, admin_chat):
+        config = {}
+        if admin_chat:
+            config[str(admin_chat)] = 2
+        Logger.init(self.bot, config)
+
+    def init_global_handlers(self):
+        self._global_handlers = [
+            SelfJoinedChat([MakeSenderBotAdmin(), SendTextMessage(['Hello everyone! Configure me by sending /config in private chat'], False, None)]),
+            IsCommand('/make_?[Aa]dmin', IsReply([SwapReply([MakeSenderBotAdmin(), SenderUsername(False, False, True, [SendTextMessage(['%s is now admin'], False, None)])])]))
+        ]
 
     def list_tick_handlers(self, chat_id):
         if chat_id in self._tick_handlers:
@@ -135,7 +147,8 @@ class CurryBot (object):
         Forwards the messages to the other handlers if applicable.
         Always calls the handler that checks if the bot was added to a group.
         '''
-        self.call_handler(self._init_admin_handler, bot, message)
+        for handler in self._global_handlers:
+            self.call_handler(handler, bot, message)
 
         chat_id = str(message.chat.id)
         if chat_id in self._chat_message_handlers:

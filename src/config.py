@@ -84,5 +84,6 @@ class Config (object):
                         handler = MessageHandler.class_from_dict(handler_dict).from_dict(handler_dict)
                         bot.register_tick_handler(chat_id, handler, handler_name)
 
+                bot.init_global_handlers()
         else:
             Logger.log_error('Config file does not exist (This error can be ignored on the initial run)')
