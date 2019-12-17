@@ -7,7 +7,7 @@ class MakeSenderBotAdmin (MessageHandler):
         super(MakeSenderBotAdmin, self).__init__([])
 
     def call(self, bot, msg, target, exclude):
-        Logger.log_info('Added bot admin')
+        Logger.log_info('Added %s as bot admin' % msg.from_user.first_name)
         Cache.add_chat_admin(msg.chat.id, msg.from_user.id)
         return []
 
