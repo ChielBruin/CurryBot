@@ -16,6 +16,12 @@ class ConfigConversation (object):
         self.bot = bot
 
     def start(self, bot, update, user_data):
+        if not update.message.chat.type == 'private':
+            update.message.reply_text(
+                'This command can only be used in a private conversation'
+            )
+            return ConversationHandler.END
+        
         user_data['stack'] = []
         user_data['acc'] = None
         user_data['user_msg'] = False
