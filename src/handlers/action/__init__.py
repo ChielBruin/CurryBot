@@ -6,10 +6,12 @@ from .rss       import SendRSS, SendReddit
 from .flickr    import SendFlickr
 from .vote      import UpVote, DownVote, GetVote
 from .monitor   import MonitorChatActivity, MonitorUserActivity
+from .sticker   import SendStickerPack
 
 __all__ = [
     'SendTextMessage', 'SendHTMLMessage', 'SendMarkdownMessage',
     'MakeSenderBotAdmin', 'Forward', 'YtPlaylistAppend',
     'SendRSS', 'SendReddit', 'SendFlickr',
     'UpVote', 'DownVote', 'GetVote',
-    'MonitorChatActivity', 'MonitorUserActivity']
+    'MonitorChatActivity', 'MonitorUserActivity',
+    'SendStickerPack']
