@@ -21,10 +21,10 @@ class Handler (object):
         self.children.extend(new_children)
         self.on_children_update(new_children)
 
-    def update(self):
-        self.on_update()
+    def update(self, bot):
+        self.on_update(bot)
         for child in self.children:
-            child.update()
+            child.update(bot)
 
     def propagate(self, bot, message, target, exclude):
         res = []
@@ -41,7 +41,7 @@ class Handler (object):
     def on_children_update(self, children):
         pass
 
-    def on_update(self):
+    def on_update(self, bot):
         pass
 
     def has_effect():

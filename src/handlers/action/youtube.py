@@ -142,7 +142,7 @@ class YtPlaylistAppend (MessageHandler):
             'scopes': credentials.scopes
         }
 
-    def update(self):
+    def on_update(self, bot):
         credentials = self._credentials_to_dict(self.credentials)
         Cache.put(self.cache_key, str(credentials), encrypt=True)
 

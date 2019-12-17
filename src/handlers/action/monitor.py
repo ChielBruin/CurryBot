@@ -9,9 +9,8 @@ class AbstractActivityMonitor (MessageHandler):
     def __init__(self, cache_key):
         super(AbstractActivityMonitor, self).__init__([])
         self.cache_key = cache_key
-        self.update()
 
-    def update(self):
+    def on_update(self, bot):
         if not Cache.contains(self.cache_key):
             Cache.put(self.cache_key, {'chat': {}, 'user': {} })
 

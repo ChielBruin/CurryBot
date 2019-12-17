@@ -18,9 +18,7 @@ class SendFlickr (RandomMessageHandler):
         self.key = api_key
         self.pack = pack
 
-        self.update()
-
-    def update(self):
+    def on_update(self, bot):
         Logger.log_debug('Updating flickr cache')
         flickr_album = self.make_request('flickr.photosets.getPhotos', 'photoset', {'photoset_id': self.pack})
         name = flickr_album['title']

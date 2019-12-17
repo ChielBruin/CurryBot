@@ -97,6 +97,7 @@ class CurryBot (object):
             dict[chat].append((name, handler))
         else:
             dict[chat] = [(name, handler)]
+        handler.update(self.bot)
 
     def on_receive(self, bot, update):
         if update.message:
@@ -159,9 +160,11 @@ class CurryBot (object):
         Logger.log_debug('Updating cache')
         for chat in self._chat_message_handlers:
             for (_, handler) in self._chat_message_handlers[chat]:
-                handler.update()
+                handler.update(self.bot)
         for (_, handler) in self._tick_handlers:
-            handler.update()
+            handler.update(self.bot)
+        for (_, handler) in self._button_handlers:
+            handler.update(self.bot)
         Cache.store_cache()
         Config.store_config()
 
