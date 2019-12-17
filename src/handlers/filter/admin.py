@@ -2,7 +2,7 @@ import re
 
 from ..messageHandler import MessageHandler
 from exceptions       import FilterException
-from data             import Config
+from data             import Cache
 from configResponse   import Send, Done, AskChild, NoChild, CreateException
 
 
@@ -14,7 +14,7 @@ class SenderIsBotAdmin (MessageHandler):
         chat_id = message.chat.id
         user_id = message.from_user.id
 
-        if Config.is_chat_admin(chat_id, user_id):
+        if Cache.is_chat_admin(chat_id, user_id):
             return self.propagate(bot, message, target, exclude)
         else:
             raise FilterException()
