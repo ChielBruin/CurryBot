@@ -15,6 +15,7 @@ class UserJoinedChat (MessageHandler):
             res = []
             for member in message.new_chat_members:
                 message.from_user = member
+                message.text = member.first_name
                 res.extend(self.propagate(bot, message, target, exclude))
             return res
         else:

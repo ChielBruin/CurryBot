@@ -1,5 +1,5 @@
 from ..messageHandler import MessageHandler
-from data import Cache
+from data import Cache, Logger
 
 
 class MakeSenderBotAdmin (MessageHandler):
@@ -7,6 +7,7 @@ class MakeSenderBotAdmin (MessageHandler):
         super(MakeSenderBotAdmin, self).__init__([])
 
     def call(self, bot, msg, target, exclude):
+        Logger.log_info('Added bot admin')
         Cache.add_chat_admin(msg.chat.id, msg.from_user.id)
         return []
 

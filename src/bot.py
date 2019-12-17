@@ -25,6 +25,8 @@ class SelfJoinedChat (MessageHandler):
         if message.new_chat_members:
             try:
                 next(filter(lambda usr: usr.id == bot.id, message.new_chat_members))
+                message.from_user = bot
+                message.text = bot.first_name
                 return self.propagate(bot, message, target, exclude)
             except StopIteration as e:
                 raise FilterException()

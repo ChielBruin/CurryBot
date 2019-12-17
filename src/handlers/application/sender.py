@@ -28,7 +28,8 @@ class SenderUsername (MessageHandler):
         else:
             handle = None
 
-        message.text = ' '.join(filter(lambda x: x is None, [first_name, last_name, handle]))
+        message.text = ' '.join(filter(lambda x: not x is None, [first_name, last_name, handle]))
+        return self.propagate(bot, message, target, exclude)
 
     @classmethod
     def is_entrypoint(cls):

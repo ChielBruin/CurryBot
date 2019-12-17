@@ -22,7 +22,7 @@ class Logger(object):
     @classmethod
     def log_exception(cls, ex, msg, chat=None):
         text = (msg + '\n' if msg else '') + str(type(ex).__name__) + ': ' + str(ex)
-        cls.log_error(text, chat=None)
+        cls.log_error(text, chat=chat)
 
     @classmethod
     def log_trace(cls, msg, details=None, chat=None):
@@ -66,7 +66,7 @@ class Logger(object):
                     cls.log_error('Sending log message timed out')
 
             if details:
-                self.log_debug(details)
+                cls.log_debug(details)
 
     @classmethod
     def _get_level_string(cls, level):
