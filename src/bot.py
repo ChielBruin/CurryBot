@@ -82,6 +82,12 @@ class CurryBot (object):
         else:
             return []
 
+    def list_button_handlers(self, chat_id):
+        if chat_id in self._button_handlers:
+            return self._button_handlers[chat_id]
+        else:
+            return []
+
     def register_button_handler(self, chat, handler, name):
         self._register_handler(self._button_handlers, chat, handler, name)
 

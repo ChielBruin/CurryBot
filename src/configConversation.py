@@ -99,6 +99,7 @@ class ConfigConversation (object):
         chat_id = user_data['chat_id']
         message_buttons = [[InlineKeyboardButton(text=name, callback_data='_0_%d' % idx)] for (idx, (name, _)) in enumerate(self.bot.list_message_handlers(chat_id))]
         tick_buttons    = [[InlineKeyboardButton(text=name, callback_data='_1_%d' % idx)] for (idx, (name, _)) in enumerate(self.bot.list_tick_handlers(chat_id))]
+        tick_buttons    = [[InlineKeyboardButton(text=name, callback_data='_2_%d' % idx)] for (idx, (name, _)) in enumerate(self.bot.list_button_handlers(chat_id))]
         exit_button     = [[InlineKeyboardButton(text='Exit', callback_data='_2_2')]]
         self.send_or_edit(bot, user_data, update.callback_query.message, 'Select a handler to remove', buttons=message_buttons + tick_buttons + exit_button)
         return self.REMOVE_HANDLER
@@ -115,9 +116,13 @@ class ConfigConversation (object):
             if update.callback_query.data[1] == '0':
                 name, _ = self.bot.list_message_handlers(chat_id)[idx]
                 self.bot.remove_message_handler(chat_id, name)
-            else:
+            elif update.callback_query.data[1] == '1':
                 name, _ = self.list_tick_handlers(chat_id)[idx]
                 self.bot.remove_tick_handler(chat_id, name)
+            else:
+                name, _ = self.list_button_handlers(chat_id)[idx]
+                self.bot.remove_button_handler(chat_id, name)
+
 
             self.send_or_edit(bot, user_data, update.callback_query.message, 'Removed \'%s\'' % name)
             return ConversationHandler.END
