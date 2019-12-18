@@ -33,13 +33,13 @@ class AbstractSendMessage (RandomMessageHandler):
             return reply_text
 
     def call(self, bot, msg, target, exclude):
-        msg_data = msg.text[:47] if len(msg.text) > 47 else msg.text
+        msg_data = msg.text[:64] if len(msg.text) > 64 else msg.text
         (id, message) = self.select_random_option(exclude=exclude)
         applied_message = self.apply_message(msg.text, message)
 
         if self.buttons:
             msg_data = msg.text[:]
-            buttons = InlineKeyboardMarkup([[InlineKeyboardButton(text=text, callback_data='%s_%s' % (text, msg_data)) for text in button_row] for button_row in self.buttons])
+            buttons = InlineKeyboardMarkup([[InlineKeyboardButton(text=text, callback_data=msg_data) for text in button_row] for button_row in self.buttons])
         else:
             buttons = None
 
@@ -85,11 +85,11 @@ class AbstractSendMessage (RandomMessageHandler):
             else:
                 return (4, data, Send('I created those buttons for a reason', buttons=buttons))
         elif stage == 5:
-            if arg.text and len(arg.text) < 16 and '_' not in arg.text:
+            if arg.text:
                 data[2].append(arg.text)
                 return (6, data, Send('Dou you want to add more buttons?', buttons=Send.YES_NO))
             else:
-                return (5, data, Send('Invalid message, either it has no text, it contains an underscore or it is longer than 16 characters'))
+                return (5, data, Send('Invalid message, it should contain text'))
         elif stage == 6:
             if isinstance(arg, str):
                 if arg=='yes':
