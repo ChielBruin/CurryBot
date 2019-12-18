@@ -39,7 +39,7 @@ class YtPlaylistAppend (MessageHandler):
             )
             self.credentials = credentials
             self.youtube = googleapiclient.discovery.build(
-                'youtube', 'v3', credentials=credentials
+                'youtube', 'v3', credentials=credentials, cache_discovery=False
             )
         except Exception as ex:
             Logger.log_exception(ex, msg='Error while authorizing YouTube API')
