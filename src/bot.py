@@ -163,7 +163,14 @@ class CurryBot (object):
 
     def on_receive_callback(self, bot, update):
         query = update.callback_query
-        message = Message(-1, query.from_user, query.message.date, query.message.chat, text=query.data, reply_to_message=query.message)
+        if query.message.reply_to_message:
+            reply_to = query.message.reply_to_message
+            text = '%s_%s' % (query.data, query.message.reply_to_message.text)
+        else:
+            reply_to = None
+            text = query.data
+
+        message = Message(-1, query.from_user, query.message.date, query.message.chat, text=text, reply_to_message=reply_to)
         chat_id = str(query.message.chat.id)
         if chat_id in self._button_handlers:
             for (_, handler) in self._button_handlers[chat_id]:
