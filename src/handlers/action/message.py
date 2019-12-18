@@ -38,8 +38,7 @@ class AbstractSendMessage (RandomMessageHandler):
         applied_message = self.apply_message(msg, message)
 
         if self.buttons:
-            msg_data = msg.text[:]
-            buttons = InlineKeyboardMarkup([[InlineKeyboardButton(text=text, callback_data=msg_data) for text in button_row] for button_row in self.buttons])
+            buttons = InlineKeyboardMarkup([[InlineKeyboardButton(text=text, callback_data=text) for text in button_row] for button_row in self.buttons])
         else:
             buttons = None
 
