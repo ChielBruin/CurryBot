@@ -1,14 +1,16 @@
-from .regex    import MatchFilter, SearchFilter
-from .time     import TimeFilter
-from .chatjoin import UserJoinedChat
-from .activity import ChatNoActivity, UserNoActivity
-from .admin    import SenderIsBotAdmin
-from .command  import IsCommand
-from .type     import IsReply, IsForward
-from .pick     import PickWeighted, PickUniform
+from .regex     import MatchFilter, SearchFilter
+from .time      import TimeFilter
+from .chatjoin  import UserJoinedChat
+from .activity  import ChatNoActivity, UserNoActivity
+from .admin     import SenderIsBotAdmin
+from .command   import IsCommand
+from .type      import IsReply, IsForward
+from .pick      import PickWeighted, PickUniform
+from .intfilter import IntFilter
 
 __all__ = [
     'MatchFilter', 'SearchFilter', 'TimeFilter', 'UserJoinedChat',
     'ChatNoActivity', 'UserNoActivity', 'SenderIsBotAdmin',
-    'IsCommand', 'IsReply', 'IsForward', 'PickWeighted', 'PickUniform'
+    'IsCommand', 'IsReply', 'IsForward', 'PickWeighted', 'PickUniform',
+    'IntFilter'
 ]
