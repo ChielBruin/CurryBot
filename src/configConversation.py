@@ -21,7 +21,7 @@ class ConfigConversation (object):
                 'This command can only be used in a private conversation'
             )
             return ConversationHandler.END
-        
+
         user_data['stack'] = []
         user_data['acc'] = None
         user_data['user_msg'] = False
@@ -99,9 +99,9 @@ class ConfigConversation (object):
         chat_id = user_data['chat_id']
         message_buttons = [[InlineKeyboardButton(text=name, callback_data='_0_%d' % idx)] for (idx, (name, _)) in enumerate(self.bot.list_message_handlers(chat_id))]
         tick_buttons    = [[InlineKeyboardButton(text=name, callback_data='_1_%d' % idx)] for (idx, (name, _)) in enumerate(self.bot.list_tick_handlers(chat_id))]
-        tick_buttons    = [[InlineKeyboardButton(text=name, callback_data='_2_%d' % idx)] for (idx, (name, _)) in enumerate(self.bot.list_button_handlers(chat_id))]
+        button_buttons  = [[InlineKeyboardButton(text=name, callback_data='_2_%d' % idx)] for (idx, (name, _)) in enumerate(self.bot.list_button_handlers(chat_id))]
         exit_button     = [[InlineKeyboardButton(text='Exit', callback_data='_3_2')]]
-        self.send_or_edit(bot, user_data, update.callback_query.message, 'Select a handler to remove', buttons=message_buttons + tick_buttons + exit_button)
+        self.send_or_edit(bot, user_data, update.callback_query.message, 'Select a handler to remove', buttons=message_buttons + tick_buttons + button_buttons + exit_button)
         return self.REMOVE_HANDLER
 
     def remove_end(self, bot, update, user_data):
@@ -452,7 +452,7 @@ class ConfigConversation (object):
                     CallbackQueryHandler(self.copy_msg_handler, pattern='^_0_[\d]+$', pass_user_data=True)
                 ],
                 self.REMOVE_HANDLER: [
-                    CallbackQueryHandler(self.remove_end, pattern='^_[012]_-?[\d]+$', pass_user_data=True)
+                    CallbackQueryHandler(self.remove_end, pattern='^_[0123]_-?[\d]+$', pass_user_data=True)
                 ],
                 self.ADD_HANDLER_INITIAL: [
                     CallbackQueryHandler(self.add_initial_type_tick, pattern='^0$', pass_user_data=True),
