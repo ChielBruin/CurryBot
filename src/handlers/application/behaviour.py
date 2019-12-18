@@ -1,3 +1,5 @@
+from telegram import InlineKeyboardButton
+
 from ..messageHandler import MessageHandler
 from exceptions     import FilterException
 
@@ -26,9 +28,9 @@ class SendBehaviour (MessageHandler):
             if action == self.SEND:
                 target = None
             elif action == self.REPLY:
-                target = message
+                target = msg.message_id
             elif action == self.TRANSATIVE_REPLY:
-                target = message.reply_to_message
+                target = msg.reply_to_message.message_id
             else:
                 raise Exception('Invalid action id %d' % action)
 
@@ -45,8 +47,20 @@ class SendBehaviour (MessageHandler):
 
     @classmethod
     def create(cls, stage, data, arg):
-        bottons1 = [[InlineKeyboardButton(text='Send', callback_data='b%d'%self.SEND)], [InlineKeyboardButton(text='Reply', callback_data='b%d'%self.REPLY)], [InlineKeyboardButton(text='None', callback_data='none')]]
-        buttons2 = buttons1 + [InlineKeyboardButton(text='Transitive', callback_data='b%d'%self.TRANSATIVE_REPLY)]
+        buttons1 = [[InlineKeyboardButton(text='Send', callback_data='b%d'%cls.SEND)], [InlineKeyboardButton(text='Reply', callback_data='b%d'%cls.REPLY)], [InlineKeyboardButton(text='None', callback_data='none')]]
+        buttons2 = [[InlineKeyboardButton(text='Transitive', callback_data='b%d'%cls.TRANSATIVE_REPLY)]] + buttons1
+
+        def to_desc(data):
+            def from_int(int):
+                if int == cls.SEND:
+                    return 'send'
+                elif int == cls.REPLY:
+                    return 'reply'
+                elif int == cls.TRANSATIVE_REPLY:
+                    return 'transitive'
+                else:
+                    raise Exception('Unknown behaviour %d' % int)
+            return ' -> '.join(map(from_int, data))
 
         if stage == 0:
             return (1, [], Send('How should the bot behave on a normal message?', buttons=buttons1))
@@ -55,19 +69,19 @@ class SendBehaviour (MessageHandler):
                 if arg == 'none':
                     return (2, (data, []), Send('How should the bot behave on a reply?', buttons=buttons2))
                 data.append(int(arg[1]))
-                return (1, data, Send('Should it do more?', buttons=buttons1))
+                return (1, data, Send('Should it do more? (%s)' % to_desc(data), buttons=buttons1))
         if stage == 2:
             if isinstance(arg, str):
                 if arg == 'none':
                     return (3, (data[0], data[1], []), Send('How should the bot behave on a forwarded message?', buttons=buttons1))
                 data[1].append(int(arg[1]))
-                return (2, data, Send('Should it do more?', buttons=buttons2))
+                return (2, data, Send('Should it do more? (%s)' % to_desc(data[1]), buttons=buttons2))
         if stage == 3:
             if isinstance(arg, str):
                 if arg == 'none':
                     return (4, (data, []), AskChild())
                 data[2].append(int(arg[1]))
-                return (3, data, Send('Should it do more?', buttons=buttons1))
+                return (3, data, Send('Should it do more? (%s)' % to_desc(data[2]), buttons=buttons1))
             else:
                 return (1, data, Send('That is not how buttons work', buttons=buttons1))
         if stage == 4:
@@ -110,7 +124,7 @@ class TransitiveReply(SendBehaviour):
 
 class Reply(SendBehaviour):
     def __init__(self, children):
-        super(Reply, self).__init__([], [self.REPLY], [], children)
+        super(Reply, self).__init__([self.REPLY], [], [], children)
 
     @classmethod
     def get_name(cls):
