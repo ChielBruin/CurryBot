@@ -4,26 +4,23 @@ from exceptions     import FilterException
 from configResponse import Send, Done, AskChild, NoChild, CreateException
 
 
-class SwapReply (MessageHandler):
+class AbstractSwap (MessageHandler):
     def __init__(self, children):
-        super(SwapReply, self).__init__(children)
+        super(AbstractSwap, self).__init__(children)
 
+    def do_swap(self, msg):
+        raise Exception('do_swap not implemented')
 
     def call(self, bot, msg, target, exclude):
         if msg.reply_to_message:
-            msg.reply_to_message.reply_to_message = msg
-            return self.propagate(bot, msg.reply_to_message, target, exclude)
+            swapped = self.do_swap(msg)
+            return self.propagate(bot, swapped, target, exclude)
         else:
-            Logger.log_error('Message is not a reply')
-            return []
+            raise Exception('Message is not a reply')
 
     @classmethod
     def is_entrypoint(cls):
         return False
-
-    @classmethod
-    def get_name(cls):
-        return "Swap reply messages"
 
     @classmethod
     def create(cls, stage, data, arg):
@@ -44,3 +41,39 @@ class SwapReply (MessageHandler):
 
     def _to_dict(self):
         return {}
+
+class SwapReply (AbstractSwap):
+    def __init__(self, children):
+        super(SwapReply, self).__init__(children)
+
+    @classmethod
+    def get_name(cls):
+        return "Swap reply messages"
+
+    def do_swap(self, msg):
+        msg.reply_to_message.reply_to_message = msg
+        return msg.reply_to_message
+
+class SwapReplySender (AbstractSwap):
+    def __init__(self, children):
+        super(SwapReplySender, self).__init__(children)
+
+    @classmethod
+    def get_name(cls):
+        return "Swap reply senders"
+
+    def do_swap(self, msg):
+        msg.reply_to_message.from_user, msg.from_user = msg.from_user, msg.reply_to_message.from_user
+        return msg
+
+class SwapReplyContent (AbstractSwap):
+    def __init__(self, children):
+        super(SwapReplyContent, self).__init__(children)
+
+    @classmethod
+    def get_name(cls):
+        return "Swap reply message content"
+
+    def do_swap(self, msg):
+        msg.reply_to_message.text, msg.text = msg.text, msg.reply_to_message.text
+        return msg
