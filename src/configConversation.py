@@ -358,7 +358,7 @@ class ConfigConversation (object):
             else:
                 message = 'Select an API key'
                 buttons = [[InlineKeyboardButton(text=key, callback_data='0_' + str(key))] for key in keys]
-
+                user_data['stack'] = user_data['stack'][:-1]
             self.send_or_edit(bot, user_data, update.callback_query.message, message, buttons)
             return self.ADD_HANDLER_API_KEY
         except Exception as ex:
