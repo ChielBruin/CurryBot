@@ -72,8 +72,7 @@ class Handler (object):
     def is_entrypoint(cls):
         raise Exception('is_entrypoint not implemented for %s' % cls)
 
-    @classmethod
-    def is_private(cls):
+    def is_private(self):
         '''
         Some handlers should not be copied to other chats, as this will expose their API keys.
         These handlers should return True.

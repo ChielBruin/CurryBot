@@ -78,8 +78,7 @@ class YtPlaylistAppend (MessageHandler):
     def is_entrypoint(cls):
         return False
 
-    @classmethod
-    def is_private(cls):
+    def is_private(self):
         return True
 
     @classmethod

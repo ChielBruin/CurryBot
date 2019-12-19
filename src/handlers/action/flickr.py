@@ -74,6 +74,9 @@ class SendFlickr (RandomMessageHandler):
     def get_name(cls):
         return "Send Flickr image"
 
+    def is_private(self):
+        return True
+
     def _to_dict(self):
         return {'key': self.key, 'pack': self.pack, 'id': self._id}
 
