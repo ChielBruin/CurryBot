@@ -122,7 +122,7 @@ class ConfigConversation (object):
                 name, _ = self.bot.list_button_handlers(chat_id)[idx]
                 self.bot.remove_button_handler(chat_id, name)
 
-
+            Logger.log_info('Removed \'%s\'' % name)
             self.send_or_edit(bot, user_data, update.callback_query.message, 'Removed \'%s\'' % name)
             return ConversationHandler.END
         except:
