@@ -50,53 +50,59 @@ class Cache(object):
             Logger.log_error('The specified cache location must be a folder, not \'%\'' % loc)
             raise Exception()
         cls.cache_location = os.path.join(loc, 'bot_cache.json')
+        cls.meta_location  = os.path.join(loc, 'bot_metadata.json')
 
     @classmethod
     def store_cache(cls):
         # Select all the cache entries of which the id is configured to store to disk
-        cache = {
+        meta = {
             'admins': cls.chat_admins,
             'titles': cls.chat_titles,
             'keys'  : cls.chat_keys,
             'api'   : cls.api_keys,
             'save'  : cls._save_cache,
-            'cache' : {}
         }
+        cache = {}
 
         for cache_entry in cls._cache:
             if cache_entry in cls._save_cache and cls._save_cache[cache_entry] is True:
-                cache['cache'][cache_entry] = cls._cache[cache_entry]
+                cache[cache_entry] = cls._cache[cache_entry]
 
         # Write the selected parts of the cache to file
         with open(cls.cache_location, 'w') as cache_file:
             Logger.log_debug('Writing cache to disk')
             json.dump(cache, cache_file)
+        with open(cls.meta_location, 'w') as meta_file:
+            Logger.log_debug('Writing metadata to disk')
+            json.dump(meta, meta_file)
 
     @classmethod
     def load_cache(cls):
-        if os.path.exists(cls.cache_location):
-            with open(cls.cache_location, 'r') as cache_file:
-                Logger.log_debug('Loading cache')
-                content = cache_file.read()
-                if content:
-                    try:
-                        cache = json.loads(content)
-                    except:
-                        cache = {}
-                        Logger.log_error('Malformed cache, starting with a fresh cache')
-                else:
-                    Logger.log_info('Cache file appears to be empty')
-                    cache = {}
-        else:
-            Logger.log_error('Cache file does not exist (This error can be ignored on the initial run)')
-            cache = {}
+        def try_load_json(filename, type):
+            if os.path.exists(filename):
+                with open(filename, 'r') as cache_file:
+                    Logger.log_debug('Loading %s' % type)
+                    content = cache_file.read()
+                    if content:
+                        try:
+                            return json.loads(content)
+                        except:
+                            Logger.log_error('Malformed %s, starting with a fresh %s file' % type)
+                    else:
+                        Logger.log_info('%s file appears to be empty' % type)
+            else:
+                Logger.log_error('%s file does not exist (This error can be ignored on the initial run)' % type)
+            return {}
 
-        cls._save_cache = cache['save']   if 'save'   in cache else {}
-        cls._cache      = cache['cache']  if 'cache'  in cache else {}
-        cls.chat_admins = cache['admins'] if 'admins' in cache else {}
-        cls.chat_titles = cache['titles'] if 'titles' in cache else {}
-        cls.chat_keys   = cache['keys']   if 'keys'   in cache else {}
-        cls.api_keys    = cache['api']    if 'api'    in cache else {}
+
+        cls._cache = try_load_json(cls.cache_location, 'cache')
+        meta = try_load_json(cls.meta_location, 'metadata')
+
+        cls._save_cache = meta['save']   if 'save'   in meta else {}
+        cls.chat_admins = meta['admins'] if 'admins' in meta else {}
+        cls.chat_titles = meta['titles'] if 'titles' in meta else {}
+        cls.chat_keys   = meta['keys']   if 'keys'   in meta else {}
+        cls.api_keys    = meta['api']    if 'api'    in meta else {}
 
     @classmethod
     def set_cipher_pwd(cls, key):
