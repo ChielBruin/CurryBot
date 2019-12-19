@@ -59,6 +59,7 @@ class Cache(object):
             'titles': cls.chat_titles,
             'keys'  : cls.chat_keys,
             'api'   : cls.api_keys,
+            'save'  : cls._save_cache,
             'cache' : {}
         }
 
@@ -90,6 +91,7 @@ class Cache(object):
             Logger.log_error('Cache file does not exist (This error can be ignored on the initial run)')
             cache = {}
 
+        cls._save_cache = cache['save']   if 'save'   in cache else {}
         cls._cache      = cache['cache']  if 'cache'  in cache else {}
         cls.chat_admins = cache['admins'] if 'admins' in cache else {}
         cls.chat_titles = cache['titles'] if 'titles' in cache else {}
