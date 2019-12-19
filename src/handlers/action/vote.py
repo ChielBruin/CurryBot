@@ -112,7 +112,7 @@ class GetVote (AbstractVote):
     def call(self, bot, msg, target, exclude):
         key, (val, users) = self.get_votes(msg)
         msg.text = str(val)
-        self.propagate(bot, msg, target, exclude)
+        return self.propagate(bot, msg, target, exclude)
 
     @classmethod
     def is_entrypoint(cls):
