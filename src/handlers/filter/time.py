@@ -106,7 +106,7 @@ class TimeFilter (MessageHandler):
             )
         elif stage is 11 or stage is 12:
             return cls._create_step(stage, data, arg,
-                'month', 'week of the month', 1, 5
+                'month', 'week of the month', 1, 13
             )
         elif stage is 13 or stage is 14:
             return cls._create_step(stage, data, arg,
