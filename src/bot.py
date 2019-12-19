@@ -188,10 +188,12 @@ class CurryBot (object):
         for chat in self._chat_message_handlers:
             for (_, handler) in self._chat_message_handlers[chat]:
                 handler.update(self.bot)
-        for (_, handler) in self._tick_handlers:
-            handler.update(self.bot)
-        for (_, handler) in self._button_handlers:
-            handler.update(self.bot)
+        for chat in self._tick_handlers:
+            for (_, handler) in self._tick_handlers[chat]:
+                handler.update(self.bot)
+        for chat in self._button_handlers:
+            for (_, handler) in self._button_handlers[chat]:
+                handler.update(self.bot)
         Cache.store_cache()
         Config.store_config()
 
