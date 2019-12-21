@@ -94,3 +94,54 @@ class PickUniform (MessageHandler):
 
     def _to_dict(self):
         return {}
+
+
+class PercentageFilter (MessageHandler):
+    def __init__(self, percentage, children):
+        super(PercentageFilter, self).__init__(children)
+        self._percentage = percentage
+
+    def call(self, bot, message, target, exclude):
+        if random.randrange(100) <= self._percentage:
+            return self.propagate(bot, message, target, exclude)
+        else:
+            raise FilterException()
+
+    @classmethod
+    def is_entrypoint(cls):
+        return False
+
+    @classmethod
+    def get_name(cls):
+        return "Filter out x% of messages"
+
+    @classmethod
+    def create(cls, stage, data, arg):
+        if stage == 0:
+            return (1, None, Send('Send me the percentage of messages to keep'))
+        elif stage == 1:
+            match = re.match(r'([\d]?[\d])%?', arg.text)
+            if match:
+                val = int(match.group(1))
+                return (2, (val, []), AskChild())
+            elif re.match(r'0.[\d]+', arg.text):
+                val = float(arg)
+                return (2, (val, []), AskChild())
+            else:
+                return (1, None, Send('That is not a valid percentage'))
+        elif stage == 2 and isinstance(arg, MessageHandler):
+            data[1].append(arg)
+            return (2, data, AskChild())
+        elif stage == 2 and isinstance(arg, NoChild):
+            percentage, children = data
+            return (-1, None, Done(PercentageFilter(percentage, children)))
+        else:
+            print(stage, data, arg)
+            raise CreateException('Invalid create state for percentageFilter')
+
+    @classmethod
+    def _from_dict(cls, dict, children):
+        return PercentageFilter(dict['percent'], children)
+
+    def _to_dict(self):
+        return {'percent': self._percentage}
