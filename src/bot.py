@@ -136,6 +136,8 @@ class CurryBot (object):
         self.on_receive_message(bot, message)
 
     def call_handler(self, handler, bot, message):
+        if message.text is None:
+            message.text = ''
         try:
             res = handler.call(bot, message, None, [])
             if res is None:
