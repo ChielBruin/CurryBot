@@ -99,7 +99,7 @@ class PickUniform (MessageHandler):
 class PercentageFilter (MessageHandler):
     def __init__(self, percentage, children):
         super(PercentageFilter, self).__init__(children)
-        self._percentage = percentage
+        self._percentage = int(percentage)
 
     def call(self, bot, message, target, exclude):
         if random.randrange(100) <= self._percentage:
@@ -109,7 +109,7 @@ class PercentageFilter (MessageHandler):
 
     @classmethod
     def is_entrypoint(cls):
-        return False
+        return True
 
     @classmethod
     def get_name(cls):
@@ -120,12 +120,12 @@ class PercentageFilter (MessageHandler):
         if stage == 0:
             return (1, None, Send('Send me the percentage of messages to keep'))
         elif stage == 1:
-            match = re.match(r'([\d]?[\d])%?', arg.text)
+            match = re.match(r'([\d]?[\d])%?$', arg.text)
             if match:
                 val = int(match.group(1))
                 return (2, (val, []), AskChild())
-            elif re.match(r'0.[\d]+', arg.text):
-                val = float(arg)
+            elif re.match(r'0?\.[\d]+$', arg.text):
+                val = float(arg.text) * 100
                 return (2, (val, []), AskChild())
             else:
                 return (1, None, Send('That is not a valid percentage'))

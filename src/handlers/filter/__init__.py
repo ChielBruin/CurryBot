@@ -7,7 +7,7 @@ from .command   import IsCommand
 from .type      import IsReply, IsForward
 from .pick      import PickWeighted, PickUniform, PercentageFilter
 from .intfilter import IntFilter
-from .try       import Try
+from .traversal import Try
 
 __all__ = [
     'MatchFilter', 'SearchFilter', 'TimeFilter', 'UserJoinedChat',

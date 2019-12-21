@@ -1,4 +1,4 @@
-from messageHandler import MessageHandler
+from ..messageHandler import MessageHandler
 from exceptions import FilterException
 from configResponse import Send, Done, AskChild, NoChild, CreateException
 
@@ -19,7 +19,7 @@ class Try (MessageHandler):
 
     @classmethod
     def is_entrypoint(cls):
-        return False
+        return True
 
     @classmethod
     def get_name(cls):
@@ -33,7 +33,7 @@ class Try (MessageHandler):
             data.append(arg)
             return (1, data, AskChild())
         elif stage == 1 and isinstance(arg, NoChild):
-            return (-1, None, Done(Try(children)))
+            return (-1, None, Done(Try(data)))
         else:
             print(stage, data, arg)
             raise CreateException('Invalid create state for try')
