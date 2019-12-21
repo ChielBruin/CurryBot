@@ -28,6 +28,9 @@ class IntFilter (MessageHandler):
             raise Exception('Unknown operator %s' % condition)
 
     def call(self, bot, message, target, exclude):
+        if message.text is None:
+            raise FilterException()
+
         if re.match(r'-?[\d]+', message.text):
             if self.condition_lambda(int(message.text)):
                 return self.propagate(bot, message, target, exclude)

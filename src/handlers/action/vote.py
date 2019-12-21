@@ -33,6 +33,8 @@ class AbstractVote (MessageHandler):
             return new_val
 
     def call(self, bot, msg, target, exclude):
+        if not msg.text:
+            raise Exception('You cannot vote on an empty message')
         val = self.apply_vote(msg)
         msg.text = str(val)
         return self.propagate(bot, msg, target, exclude)

@@ -71,6 +71,8 @@ class YtPlaylistAppend (MessageHandler):
 
 
     def call(self, bot, msg, reply_to, exclude):
+        if not msg.text:
+            raise Exception('An empty message is not a valid video ID')
         self._playlist_add(msg.text, msg.chat.id)
         return []
 

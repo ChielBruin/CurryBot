@@ -33,6 +33,9 @@ class AbstractSendMessage (RandomMessageHandler):
             return reply_text
 
     def call(self, bot, msg, target, exclude):
+        if msg.text is None:
+            msg.text = ''
+        
         msg_data = msg.text[:64] if len(msg.text) > 64 else msg.text
         (id, message) = self.select_random_option(exclude=exclude)
         applied_message = self.apply_message(msg, message)
