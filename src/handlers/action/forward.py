@@ -23,7 +23,7 @@ class Forward (MessageHandler):
 
     @classmethod
     def is_entrypoint(cls):
-        return
+        return False
 
     def has_effect():
         return True

@@ -1,3 +1,5 @@
+import traceback
+
 from handlers.messageHandler import MessageHandler
 from exceptions import FilterException
 from data import Logger
