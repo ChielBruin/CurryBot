@@ -54,9 +54,9 @@ def main():
     encryption_key = (encryption_key * (32 // len(encryption_key) + 1))[0:32] # Repeat password to make it 32 characters long
     Cache.set_cipher_pwd(encryption_key)
 
-    curry_bot = CurryBot()
+    curry_bot = CurryBot(admin_chat)
     curry_bot.set_token(api_key)
-    curry_bot.init_logger(admin_chat)
+    curry_bot.init_logger()
 
     Config.set_config_location(cache_dir)
     Cache.set_cache_location(cache_dir)

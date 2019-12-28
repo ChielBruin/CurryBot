@@ -22,6 +22,14 @@ class Cache(object):
         return cls.chat_titles[str(chat_id)]
 
     @classmethod
+    def list_chat_titles(cls):
+        return cls.chat_titles.values()
+
+    @classmethod
+    def list_chat_ids(cls):
+        return cls.chat_titles.keys()
+
+    @classmethod
     def add_chat_admin(cls, chat_id, admin):
         chat_id = str(chat_id)
         if chat_id in cls.chat_admins:

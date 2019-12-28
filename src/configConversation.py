@@ -4,6 +4,7 @@ from telegram.ext.filters import Filters
 import traceback, inspect, sys
 
 from data import Logger, Cache
+from handlerGroup import HandlerGroup
 from configResponse import Send, Done, AskChild, NoChild, AskCacheKey, AskAPIKey, CreateException
 import handlers
 
@@ -29,12 +30,13 @@ class ConfigConversation (object):
         message = update.message
         Logger.log_debug("User %s started config conversation." % user.first_name)
 
-        chats = Cache.get_admin_chats(message.from_user.id)
+        chats = list(Cache.get_admin_chats(message.from_user.id))
         chat_names = [(chat_id, Cache.get_chat_title(chat_id)) for chat_id in chats]
 
+        global_button = [[InlineKeyboardButton(text='Global config', callback_data=HandlerGroup.GLOBAL)]] if str(self.bot.admin_chat) in chats else []
         buttons = [[InlineKeyboardButton(text=name, callback_data=str(id))] for (id, name) in chat_names]
         buttons.append([InlineKeyboardButton(text='Exit', callback_data=str(self.EXIT))])
-        reply_markup = InlineKeyboardMarkup(buttons)
+        reply_markup = InlineKeyboardMarkup(global_button + buttons)
 
         message.reply_text(
             'Select a chat to configure',
@@ -52,9 +54,10 @@ class ConfigConversation (object):
         chats = Cache.get_admin_chats(update._effective_user.id)
         chat_names = [(chat_id, Cache.get_chat_title(chat_id)) for chat_id in chats if not chat_id == user_data['chat_id']]
         if len(chat_names) > 0:
+            global_button = [[InlineKeyboardButton(text='Global config', callback_data=HandlerGroup.GLOBAL)]] if str(self.bot.admin_chat) in chats else []
             buttons = [[InlineKeyboardButton(text=name, callback_data=str(id))] for (id, name) in chat_names]
             message = 'Select a chat to copy a handler from'
-            self.send_or_edit(bot, user_data, msg, message, buttons)
+            self.send_or_edit(bot, user_data, msg, message, global_button + buttons)
             return self.COPY_HANDLER
         else:
             self.send_or_edit(bot, user_data, msg, 'No chats to copy from')
@@ -64,11 +67,11 @@ class ConfigConversation (object):
         chat_id = update.callback_query.data
         user_data['acc'] = chat_id
 
-        msg_handlers = [(idx, name) for (idx, (name, handler)) in enumerate(self.bot.list_message_handlers(chat_id)) if not handler.is_private()]
+        msg_handlers = [(idx, name) for (idx, (name, handler)) in enumerate(self.bot.message_handlers.list(chat_id)) if not handler.is_private()]
         msg_buttons = [InlineKeyboardButton(text='%s (message)' % name, callback_data='_0_%d' % idx) for (idx, name) in msg_handlers]
-        tick_handlers = [(idx, name) for (idx, (name, handler)) in enumerate(self.bot.list_tick_handlers(chat_id)) if not handler.is_private()]
+        tick_handlers = [(idx, name) for (idx, (name, handler)) in enumerate(self.bot.tick_handlers.list(chat_id)) if not handler.is_private()]
         tick_buttons = [InlineKeyboardButton(text='%s (tick)' % name, callback_data='_1_%d' % idx) for (idx, name) in tick_handlers]
-        button_handlers = [(idx, name) for (idx, (name, handler)) in enumerate(self.bot.list_button_handlers(chat_id)) if not handler.is_private()]
+        button_handlers = [(idx, name) for (idx, (name, handler)) in enumerate(self.bot.button_handlers.list(chat_id)) if not handler.is_private()]
         button_buttons = [InlineKeyboardButton(text='%s (button)' % name, callback_data='_2_%d' % idx) for (idx, name) in tick_handlers]
 
         buttons = [[button] for button in msg_buttons + tick_buttons + button_buttons]
@@ -80,38 +83,33 @@ class ConfigConversation (object):
             self.send_or_edit(bot, user_data, update.callback_query.message, 'No handlers to copy from this chat')
             return ConversationHandler.END
 
-    def copy_tick_handler(self, bot, update, user_data):
-        idx = int(update.callback_query.data[3:])
-        chat_id = user_data['acc']
-        (name, handler) = self.bot.list_tick_handlers(chat_id)[idx]
-        self.bot.register_tick_handler(chat=user_data['chat_id'], name=name, handler=handler)
+    def copy_handler(self, bot, update, user_data):
+        try:
+            type = int(update.callback_query.data[1])
+            if type == 0:
+                handler_group = self.bot.message_handlers
+            elif type == 1:
+                handler_group = self.bot.tick_handlers
+            elif type == 2:
+                handler_group = self.bot.button_handlers
+            else:
+                raise Exception('Unknown handler type %d' % type)
 
-        self.send_or_edit(bot, user_data, update.callback_query.message, 'Copied \'%s\'' % name)
-        return ConversationHandler.END
+            idx = int(update.callback_query.data[3:])
+            chat_id = user_data['acc']
+            (name, handler) = handler_group.list(chat_id)[idx]
+            handler_group.register(chat=user_data['chat_id'], name=name, handler=handler)
 
-    def copy_msg_handler(self, bot, update, user_data):
-        idx = int(update.callback_query.data[3:])
-        chat_id = user_data['acc']
-        (name, handler) = self.bot.list_message_handlers(chat_id)[idx]
-        self.bot.register_message_handler(chat=user_data['chat_id'], name=name, handler=handler)
-
-        self.send_or_edit(bot, user_data, update.callback_query.message, 'Copied \'%s\'' % name)
-        return ConversationHandler.END
-
-    def copy_button_handler(self, bot, update, user_data):
-        idx = int(update.callback_query.data[3:])
-        chat_id = user_data['acc']
-        (name, handler) = self.bot.list_button_handlers(chat_id)[idx]
-        self.bot.register_button_handler(chat=user_data['chat_id'], name=name, handler=handler)
-
-        self.send_or_edit(bot, user_data, update.callback_query.message, 'Copied \'%s\'' % name)
-        return ConversationHandler.END
+            self.send_or_edit(bot, user_data, update.callback_query.message, 'Copied \'%s\'' % name)
+            return ConversationHandler.END
+        except:
+            traceback.print_exc()
 
     def remove_start(self, bot, update, user_data):
         chat_id = user_data['chat_id']
-        message_buttons = [[InlineKeyboardButton(text='%s (message)' % name, callback_data='_0_%d' % idx)] for (idx, (name, _)) in enumerate(self.bot.list_message_handlers(chat_id))]
-        tick_buttons    = [[InlineKeyboardButton(text='%s (tick_group)' % name, callback_data='_1_%d' % idx)] for (idx, (name, _)) in enumerate(self.bot.list_tick_handlers(chat_id))]
-        button_buttons  = [[InlineKeyboardButton(text='%s (button)' % name, callback_data='_2_%d' % idx)] for (idx, (name, _)) in enumerate(self.bot.list_button_handlers(chat_id))]
+        message_buttons = [[InlineKeyboardButton(text='%s (message)' % name,    callback_data='_0_%d' % idx)] for (idx, (name, _)) in enumerate(self.bot.message_handlers.list(chat_id))]
+        tick_buttons    = [[InlineKeyboardButton(text='%s (tick_group)' % name, callback_data='_1_%d' % idx)] for (idx, (name, _)) in enumerate(self.bot.tick_handlers.list(chat_id))]
+        button_buttons  = [[InlineKeyboardButton(text='%s (button)' % name,     callback_data='_2_%d' % idx)] for (idx, (name, _)) in enumerate(self.bot.button_handlers.list(chat_id))]
         exit_button     = [[InlineKeyboardButton(text='Exit', callback_data='_3_2')]]
         self.send_or_edit(bot, user_data, update.callback_query.message, 'Select a handler to remove', buttons=message_buttons + tick_buttons + button_buttons + exit_button)
         return self.REMOVE_HANDLER
@@ -125,14 +123,14 @@ class ConfigConversation (object):
             chat_id = user_data['chat_id']
 
             if update.callback_query.data[1] == '0':
-                name, _ = self.bot.list_message_handlers(chat_id)[idx]
-                self.bot.remove_message_handler(chat_id, name)
+                handler_group = self.bot.message_handlers
             elif update.callback_query.data[1] == '1':
-                name, _ = self.bot.list_tick_handlers(chat_id)[idx]
-                self.bot.remove_tick_handler(chat_id, name)
+                handler_group = self.bot.tick_handlers
             else:
-                name, _ = self.bot.list_button_handlers(chat_id)[idx]
-                self.bot.remove_button_handler(chat_id, name)
+                handler_group = self.bot.button_handlers
+
+            name, _ = handler_group.list(chat_id)[idx]
+            handler_group.remove(chat_id, name)
 
             Logger.log_info('Removed \'%s\'' % name)
             self.send_or_edit(bot, user_data, update.callback_query.message, 'Removed \'%s\'' % name)
@@ -175,7 +173,7 @@ class ConfigConversation (object):
         user_data['user_msg'] = True
         if update.message.text:
             name = update.message.text
-            if not self.bot.has_handler_with_name(name):
+            if not self.bot.has_handler_with_name(user_data['chat_id'], name):
                 user_data['name'] = name
                 message = 'Select a filter for \'%s\'' % name
                 handlers = map(lambda x: (x[0], x[1].get_name()), filter(lambda x: x[1].is_entrypoint(), enumerate(self.HANDLERS)))
@@ -202,13 +200,13 @@ class ConfigConversation (object):
             name = user_data['name']
             type = user_data['type']
             if type == 'tick':
-                self.bot.register_tick_handler(chat=chat_id, handler=handler, name=name)
+                self.bot.tick_handlers.register(chat=chat_id, handler=handler, name=name)
                 Logger.log_info('Added tick handler \'%s\'' % name)
             elif type == 'msg':
-                self.bot.register_message_handler(chat=chat_id, name=name, handler=handler)
+                self.bot.message_handlers.register(chat=chat_id, name=name, handler=handler)
                 Logger.log_info('Added message handler \'%s\'' % name)
             elif type == 'button':
-                self.bot.register_button_handler(chat=chat_id, name=name, handler=handler)
+                self.bot.button_handlers.register(chat=chat_id, name=name, handler=handler)
                 Logger.log_info('Added button handler \'%s\'' % name)
             else:
                 message = 'Unknown handler type %s' % type
@@ -423,7 +421,7 @@ class ConfigConversation (object):
         query = update.callback_query
         chat_id = query.data
         user_data['chat_id'] = chat_id
-        chat_name = Cache.get_chat_title(chat_id)
+        chat_name = 'global handlers' if chat_id == HandlerGroup.GLOBAL else Cache.get_chat_title(chat_id)
 
         buttons = [[
             InlineKeyboardButton(text='Add a handler', callback_data=str(self.ADD)),
@@ -444,12 +442,13 @@ class ConfigConversation (object):
         return self.SELECT_ACTION
 
     def get_conversation_handler(self):
+        print('^(%s)|(-?[0-9]{5,})$' % HandlerGroup.GLOBAL)
         conv_handler = ConversationHandler(
             entry_points=[CommandHandler('config', self.start, pass_user_data=True)],
             states={
                 self.SELECT_CHAT: [
                     CallbackQueryHandler(self.end, pattern='^%s$' % self.EXIT, pass_user_data=True),
-                    CallbackQueryHandler(self.edit_chat, pattern='^-?[0-9]{5,}$', pass_user_data=True)
+                    CallbackQueryHandler(self.edit_chat, pattern='^(%s)|(-?[0-9]{5,})$' % HandlerGroup.GLOBAL, pass_user_data=True)
                 ],
                 self.SELECT_ACTION: [
                     CallbackQueryHandler(self.end, pattern='^%s$' % self.EXIT, pass_user_data=True),
@@ -460,9 +459,7 @@ class ConfigConversation (object):
                 ],
                 self.COPY_HANDLER: [
                     CallbackQueryHandler(self.copy_select_handler, pattern='^-?[\d]+$', pass_user_data=True),
-                    CallbackQueryHandler(self.copy_tick_handler, pattern='^_1_[\d]+$', pass_user_data=True),
-                    CallbackQueryHandler(self.copy_msg_handler, pattern='^_0_[\d]+$', pass_user_data=True),
-                    CallbackQueryHandler(self.copy_button_handler, pattern='^_2_[\d]+$', pass_user_data=True)
+                    CallbackQueryHandler(self.copy_handler, pattern='^_[012]_[\d]+$', pass_user_data=True),
                 ],
                 self.REMOVE_HANDLER: [
                     CallbackQueryHandler(self.remove_end, pattern='^_[0123]_-?[\d]+$', pass_user_data=True)

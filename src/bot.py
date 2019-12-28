@@ -9,6 +9,7 @@ from data import Logger, Cache
 from config import Config
 from configConversation import ConfigConversation
 from exceptions import FilterException
+from handlerGroup import HandlerGroup
 
 from handlers.messageHandler import MessageHandler
 from handlers import MakeSenderBotAdmin, IsCommand, SendTextMessage, IsReply, SwapReply, SenderIsBotAdmin
@@ -33,34 +34,40 @@ class SelfJoinedChat (MessageHandler):
             raise FilterException()
 
 class CurryBot (object):
-    def __init__(self):
+    def __init__(self, admin_chat):
         '''
         Initialize CurryBot
         '''
+        self.admin_chat = admin_chat
         self.bot = None
         self.updater = None
         self.dispatcher = None
 
-        self._chat_message_handlers = {}
-        self._tick_handlers = {}
-        self._button_handlers = {}
-        self._global_handlers = None
+        self._global_message_handlers = {}
+        self.message_handlers = None
+        self.tick_handlers    = None
+        self.button_handlers  = None
 
     def set_token(self, token):
         self.updater = Updater(token, user_sig_handler=lambda s, f, self=self: self.on_exit())
         self.dispatcher = self.updater.dispatcher
         self.bot = self.updater.bot
 
+        self.message_handlers = HandlerGroup(self.bot)
+        self.tick_handlers    = HandlerGroup(self.bot)
+        self.button_handlers  = HandlerGroup(self.bot)
+
+        self.dispatcher.add_error_handler(self.on_error)
         self.dispatcher.add_handler(ConfigConversation(self).get_conversation_handler())
         self.dispatcher.add_handler(CallbackQueryHandler(
                             (lambda bot, update, self=self: self.on_receive_callback(bot, update))))
         self.dispatcher.add_handler(TelegramMessageHandler(Filters.all,
                             (lambda bot, update, self=self: self.on_receive(bot, update))))
 
-    def init_logger(self, admin_chat):
+    def init_logger(self):
         config = {}
-        if admin_chat:
-            config[str(admin_chat)] = 2
+        if self.admin_chat:
+            config[str(self.admin_chat)] = 2
         Logger.init(self.bot, config)
 
     def init_global_handlers(self):
@@ -68,55 +75,6 @@ class CurryBot (object):
             SelfJoinedChat([MakeSenderBotAdmin(), SendTextMessage(['Hello everyone! Configure me by sending /config in private chat'], False, None)]),
             IsCommand('/make_?[Aa]dmin', SenderIsBotAdmin([IsReply([SwapReply([MakeSenderBotAdmin(), SendTextMessage(['%h is now admin'], False, None)])])]))
         ]
-
-    def list_tick_handlers(self, chat_id):
-        if chat_id in self._tick_handlers:
-            return self._tick_handlers[chat_id]
-        else:
-            return []
-
-    def list_message_handlers(self, chat_id):
-        if chat_id in self._chat_message_handlers:
-            return self._chat_message_handlers[chat_id]
-        else:
-            return []
-
-    def list_button_handlers(self, chat_id):
-        if chat_id in self._button_handlers:
-            return self._button_handlers[chat_id]
-        else:
-            return []
-
-    def register_button_handler(self, chat, handler, name):
-        self._register_handler(self._button_handlers, chat, handler, name)
-
-    def remove_button_handler(self, chat, name):
-        self._remove_handler(self._button_handlers, chat, name)
-
-    def register_message_handler(self, chat, handler, name):
-        self._register_handler(self._chat_message_handlers, chat, handler, name)
-
-    def remove_message_handler(self, chat, name):
-        self._remove_handler(self._chat_message_handlers, chat, name)
-
-    def register_tick_handler(self, chat, handler, name):
-        self._register_handler(self._tick_handlers, chat, handler, name)
-
-    def remove_tick_handler(self, chat, name):
-        self._remove_handler(self._tick_handlers, chat, name)
-
-    def _remove_handler(self, dict, chat, handler_name):
-        chat = str(chat)
-        if chat in dict:
-            dict[chat] = [(name, handler) for (name, handler) in dict[chat] if not name == handler_name]
-
-    def _register_handler(self, dict, chat, handler, name):
-        chat = str(chat)
-        if chat in dict:
-            dict[chat].append((name, handler))
-        else:
-            dict[chat] = [(name, handler)]
-        handler.update(self.bot)
 
     def on_receive(self, bot, update):
         if update.message:
@@ -135,65 +93,53 @@ class CurryBot (object):
 
         self.on_receive_message(bot, message)
 
-    def call_handler(self, handler, bot, message):
-        try:
-            res = handler.call(bot, message, None, [])
-            if res is None:
-                Logger.log_error(msg='Handler returned None instead of [..]')
-        except FilterException:
-            pass
-        except Exception as ex:
-            Logger.log_exception(ex, msg='Exception while handling message', chat=message.chat.id)
-            traceback.print_exc()
-
     def on_receive_message(self, bot, message):
         '''
         Global message handler.
         Forwards the messages to the other handlers if applicable.
         Always calls the handler that checks if the bot was added to a group.
         '''
-        for handler in self._global_handlers:
-            self.call_handler(handler, bot, message)
-
-        chat_id = str(message.chat.id)
-        if chat_id in self._chat_message_handlers:
-            for (_, handler) in self._chat_message_handlers[chat_id]:
-                self.call_handler(handler, bot, message)
+        try:
+            for handler in self._global_handlers:
+                self.message_handlers._call_handler(handler, bot, message)
+            self.message_handlers.call(bot, message)
+        except:
+            Logger.log_error('Exception while handling message')
+            traceback.print_exc()
 
     def on_receive_callback(self, bot, update):
-        query = update.callback_query
-        if query.message.reply_to_message:
-            reply_to = query.message.reply_to_message
-            text = '%s_%s' % (query.data, query.message.reply_to_message.text)
-        else:
-            reply_to = None
-            text = query.data
+        try:
+            query = update.callback_query
+            if query.message.reply_to_message:
+                reply_to = query.message.reply_to_message
+                text = '%s_%s' % (query.data, query.message.reply_to_message.text)
+            else:
+                reply_to = None
+                text = query.data
 
-        message = Message(-1, query.from_user, query.message.date, query.message.chat, text=text, reply_to_message=reply_to)
-        chat_id = str(query.message.chat.id)
-        if chat_id in self._button_handlers:
-            for (_, handler) in self._button_handlers[chat_id]:
-                self.call_handler(handler, bot, message)
+            message = Message(-1, query.from_user, query.message.date, query.message.chat, text=text, reply_to_message=reply_to)
+            self.button_handlers.call(bot, message)
+        except:
+            Logger.log_error('Exception while handling button event')
+            traceback.print_exc()
 
     def on_receive_tick(self, bot, job):
-        time = datetime.now()
-        for chat_id in self._tick_handlers:
-            chat = Chat(chat_id, 'tick_group %s' % chat_id)
-            message = Message(-1, None, time, chat, text='tick @ %s' % time.strftime('%Y-%m-%d %H:%M:%S'))
-            for (_, handler) in self._tick_handlers[chat_id]:
-                self.call_handler(handler, bot, message)
+        try:
+            time = datetime.now()
+            text = time.strftime('%Y-%m-%d %H:%M:%S')
+            messages = [Message(-1, None, time, Chat(chat_id, 'tick_group %s' % chat_id), text=text) for chat_id in Cache.list_chat_ids()]
+            self.tick_handlers.call(bot, messages)
+        except:
+            Logger.log_error('Exception while handling tick')
+            traceback.print_exc()
 
     def update_cache(self):
         Logger.log_debug('Updating cache')
-        for chat in self._chat_message_handlers:
-            for (_, handler) in self._chat_message_handlers[chat]:
-                handler.update(self.bot)
-        for chat in self._tick_handlers:
-            for (_, handler) in self._tick_handlers[chat]:
-                handler.update(self.bot)
-        for chat in self._button_handlers:
-            for (_, handler) in self._button_handlers[chat]:
-                handler.update(self.bot)
+
+        self.message_handlers.update()
+        self.button_handlers.update()
+        self.tick_handlers.update()
+
         Cache.store_cache()
         Config.store_config()
 
@@ -202,16 +148,12 @@ class CurryBot (object):
         Cache.store_cache()
         Config.store_config(self)
 
-    def has_handler_with_name(self, new_name):
-        for chat in self._chat_message_handlers:
-            for (name, _) in self._chat_message_handlers[chat]:
-                if name == new_name:
-                    return True
-        for chat in self._tick_handlers:
-            for (name, _) in self._tick_handlers[chat]:
-                if name == new_name:
-                    return True
-        return False
+    def has_handler_with_name(self, chat_id, new_name):
+        return (
+            self.message_handlers.contains(chat_id, new_name) or
+            self.button_handlers.contains(chat_id, new_name) or
+            self.tick_handlers.contains(chat_id, new_name)
+        )
 
     def start(self):
         '''
