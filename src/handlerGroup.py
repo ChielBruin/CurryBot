@@ -87,7 +87,7 @@ class HandlerGroup (object):
         try:
             res = handler.call(bot, message, None, [])
             if res is None:
-                Logger.log_error(msg='Handler returned None instead of [..]')
+                Logger.log_error(msg='Handler %s returned None instead of [..]' % type(handler).__name__)
         except FilterException:
             pass
         except Exception as ex:

@@ -30,12 +30,11 @@ class Handler (object):
         res = []
         do_copy = len(self.children) > 1
         for child in self.children:
-            res = child.call(bot, message, target, copy.copy(exclude) if do_copy else exclude)
-            if res is None:
-                print(child)
-                Logger.log_error(msg='Handler returned None instead of [..]', chat=message.chat.id)
+            res2 = child.call(bot, message, target, copy.copy(exclude) if do_copy else exclude)
+            if res2 is None:
+                Logger.log_error(msg='Handler %s returned None instead of [..]' % type(child).__name__, chat=message.chat.id)
             else:
-                res.extend(res)
+                res.extend(res2)
         return res
 
     def on_children_update(self, children):

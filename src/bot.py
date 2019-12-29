@@ -40,20 +40,17 @@ class Migrate (MessageHandler):
         self._bot = bot
 
     def call(self, bot, message, target, exclude):
-        try:
-            if message.migrate_from_chat_id:
-                old_id = str(message.migrate_from_chat_id)
-                new_id = str(message.chat.id)
+        if message.migrate_from_chat_id:
+            old_id = str(message.migrate_from_chat_id)
+            new_id = str(message.chat.id)
 
-                Cache.migrate(old_id, new_id)
-                self._bot.message_handlers.migrate(old_id, new_id)
-                self._bot.button_handlers.migrate(old_id, new_id)
-                self._bot.tick_handlers.migrate(old_id, new_id)
-                return []
-            else:
-                raise FilterException()
-        except:
-            traceback.print_exc()
+            Cache.migrate(old_id, new_id)
+            self._bot.message_handlers.migrate(old_id, new_id)
+            self._bot.button_handlers.migrate(old_id, new_id)
+            self._bot.tick_handlers.migrate(old_id, new_id)
+            return []
+        else:
+            raise FilterException()
 
 
 class CurryBot (object):
