@@ -1,7 +1,7 @@
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, ConversationHandler, MessageHandler
 from telegram.ext.filters import Filters
-import traceback, inspect, sys
+import traceback, inspect, sys, json
 
 from data import Logger, Cache
 from handlerGroup import HandlerGroup
@@ -10,7 +10,7 @@ import handlers
 
 class ConfigConversation (object):
     HANDLERS = [c for (name, c) in inspect.getmembers(sys.modules['handlers'], inspect.isclass)]
-    SELECT_CHAT, SELECT_ACTION, ADD_HANDLER_STEP, ADD_HANDLER_INITIAL, ADD_HANDLER_CHILD, ADD_HANDLER_CACHE_KEY, ADD_HANDLER_API_KEY, REMOVE_HANDLER, COPY_HANDLER = range(9)
+    SELECT_CHAT, SELECT_ACTION, ADD_HANDLER_STEP, ADD_HANDLER_INITIAL, ADD_HANDLER_CHILD, ADD_HANDLER_CACHE_KEY, ADD_HANDLER_API_KEY, REMOVE_HANDLER, COPY_HANDLER, EDIT_HANDLER, EDIT_HANDLER_PARSE = range(11)
     EXIT, ADD, EDIT, REMOVE, COPY, SKIP = range(6)
 
     def __init__ (self, bot):
@@ -48,6 +48,62 @@ class ConfigConversation (object):
         msg = update.callback_query.message
         self.send_or_edit(bot, user_data, msg, 'See you next time!')
         return ConversationHandler.END
+
+    def edit_start(self, bot, update, user_data):
+        chat_id = user_data['chat_id']
+        message_buttons = [[InlineKeyboardButton(text='%s (message)' % name,    callback_data='_0_%d' % idx)] for (idx, (name, _)) in enumerate(self.bot.message_handlers.list(chat_id))]
+        tick_buttons    = [[InlineKeyboardButton(text='%s (tick_group)' % name, callback_data='_1_%d' % idx)] for (idx, (name, _)) in enumerate(self.bot.tick_handlers.list(chat_id))]
+        button_buttons  = [[InlineKeyboardButton(text='%s (button)' % name,     callback_data='_2_%d' % idx)] for (idx, (name, _)) in enumerate(self.bot.button_handlers.list(chat_id))]
+        exit_button     = [[InlineKeyboardButton(text='Exit', callback_data='_3_2')]]
+        self.send_or_edit(bot, user_data, update.callback_query.message, 'Select a handler to edit', buttons=message_buttons + tick_buttons + button_buttons + exit_button)
+        return self.EDIT_HANDLER
+
+    def edit_send(self, bot, update, user_data):
+        if update.callback_query.data[1] == '3':
+            self.send_or_edit(bot, user_data, update.callback_query.message, 'Maybe next time')
+            return ConversationHandler.END
+        try:
+            idx = int(update.callback_query.data[3:])
+            chat_id = user_data['chat_id']
+
+            if update.callback_query.data[1] == '0':
+                handler_group = self.bot.message_handlers
+            elif update.callback_query.data[1] == '1':
+                handler_group = self.bot.tick_handlers
+            else:
+                handler_group = self.bot.button_handlers
+
+            name, _ = handler_group.list(chat_id)[idx]
+            dict = json.dumps(handler_group.handler_to_dict(chat_id, name))
+            user_data['acc'] = (update.callback_query.data[1], chat_id, name)
+
+            self.send_or_edit(bot, user_data, update.callback_query.message, 'Edit this config string and send it back to me:\n%s' % dict)
+            return self.EDIT_HANDLER_PARSE
+        except:
+            traceback.print_exc()
+
+    def edit_end(self, bot, update, user_data):
+        user_data['user_msg'] = True
+        try:
+            dict = json.loads(update.message.text)
+            group, chat_id, handler_name = user_data['acc']
+
+            if group == '0':
+                handler_group = self.bot.message_handlers
+            elif group == '1':
+                handler_group = self.bot.tick_handlers
+            else:
+                handler_group = self.bot.button_handlers
+
+            handler_group.update_handler_from_dict(chat_id, handler_name, dict)
+            self.send_or_edit(bot, user_data, update.message, 'Handler updated')
+            return ConversationHandler.END
+        except json.JSONDecodeError:
+            self.send_or_edit(bot, user_data, update.message, 'Invalid string, it must be valid JSON')
+            return self.EDIT_HANDLER_PARSE
+        except:
+            self.send_or_edit(bot, user_data, update.message, 'Invalid input, it must be a valid config')
+            return self.EDIT_HANDLER_PARSE
 
     def copy_start(self, bot, update, user_data):
         msg = update.callback_query.message
@@ -427,9 +483,9 @@ class ConfigConversation (object):
             InlineKeyboardButton(text='Add a handler', callback_data=str(self.ADD)),
             InlineKeyboardButton(text='Remove handler', callback_data=str(self.REMOVE))
             ],[
-            # InlineKeyboardButton(text='Edit a handler', callback_data=str(self.EDIT)),
+            InlineKeyboardButton(text='Edit a handler', callback_data=str(self.EDIT)),
             InlineKeyboardButton(text='Copy a handler', callback_data=str(self.COPY)),
-            # ],[
+            ],[
             InlineKeyboardButton(text='Exit', callback_data=str(self.EXIT))
         ]]
 
@@ -453,7 +509,7 @@ class ConfigConversation (object):
                 self.SELECT_ACTION: [
                     CallbackQueryHandler(self.end, pattern='^%s$' % self.EXIT, pass_user_data=True),
                     CallbackQueryHandler(self.add_start, pattern='^%s$' % self.ADD, pass_user_data=True),
-                    # CallbackQueryHandler(self.edit, pattern='^%s$' % self.EDIT, pass_user_data=True),
+                    CallbackQueryHandler(self.edit_start, pattern='^%s$' % self.EDIT, pass_user_data=True),
                     CallbackQueryHandler(self.remove_start, pattern='^%s$' % self.REMOVE, pass_user_data=True),
                     CallbackQueryHandler(self.copy_start, pattern='^%s$' % self.COPY, pass_user_data=True)
                 ],
@@ -491,6 +547,12 @@ class ConfigConversation (object):
                     CallbackQueryHandler(self.add_handler_new_api_key_callback, pattern='^%s$' % self.ADD, pass_user_data=True),
                     CallbackQueryHandler(self.add_handler_select_api_key_callback, pattern='^%s$' % self.COPY, pass_user_data=True),
                     MessageHandler(Filters.all, self.add_handler_api_key_msg, pass_user_data=True)
+                ],
+                self.EDIT_HANDLER: [
+                    CallbackQueryHandler(self.edit_send, pattern='^_[0123]_-?[\d]+$', pass_user_data=True)
+                ],
+                self.EDIT_HANDLER_PARSE: [
+                    MessageHandler(Filters.all, self.edit_end, pass_user_data=True)
                 ]
             },
             fallbacks=[]

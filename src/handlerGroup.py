@@ -70,6 +70,21 @@ class HandlerGroup (object):
             global_dict[name] = handler.to_dict()
         return dict, global_dict
 
+    def handler_to_dict(self, chat_id, handler_name):
+        if chat_id in self._handlers:
+            for (name, handler) in self._handlers[chat_id]:
+                if name == handler_name:
+                    return handler.to_dict()
+        return {}
+
+    def update_handler_from_dict(self, chat_id, handler_name, dict):
+        new_handler = MessageHandler.class_from_dict(dict).from_dict(dict)
+        new_handler.update(self._bot)
+
+        if chat_id in self._handlers:
+            self._handlers[chat_id] = [(name, new_handler if name == handler_name else handler) for (name, handler) in self._handlers[chat_id]]
+
+
     def from_dict(self, dict, global_dict):
         for chat_id in dict:
             chat_handlers = dict[chat_id]
