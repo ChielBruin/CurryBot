@@ -107,3 +107,8 @@ class HandlerGroup (object):
             if chat_id in self._handlers:
                 for (_, handler) in self._handlers[chat_id]:
                     self._call_handler(handler, bot, message)
+
+    def migrate(self, from_id, to_id):
+        if from_id in self._handlers:
+            self._handlers[to_id] = self._handlers[from_id]
+            self._handlers.pop(from_id, None)

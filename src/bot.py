@@ -33,6 +33,29 @@ class SelfJoinedChat (MessageHandler):
         else:
             raise FilterException()
 
+
+class Migrate (MessageHandler):
+    def __init__(self, bot):
+        super(Migrate, self).__init__([])
+        self._bot = bot
+
+    def call(self, bot, message, target, exclude):
+        try:
+            if message.migrate_from_chat_id:
+                old_id = str(message.migrate_from_chat_id)
+                new_id = str(message.chat.id)
+
+                Cache.migrate(old_id, new_id)
+                self._bot.message_handlers.migrate(old_id, new_id)
+                self._bot.button_handlers.migrate(old_id, new_id)
+                self._bot.tick_handlers.migrate(old_id, new_id)
+                return []
+            else:
+                raise FilterException()
+        except:
+            traceback.print_exc()
+
+
 class CurryBot (object):
     def __init__(self, admin_chat):
         '''
@@ -73,7 +96,8 @@ class CurryBot (object):
     def init_global_handlers(self):
         self._global_handlers = [
             SelfJoinedChat([MakeSenderBotAdmin(), SendTextMessage(['Hello everyone! Configure me by sending /config in private chat'], False, None)]),
-            IsCommand('/make_?[Aa]dmin', SenderIsBotAdmin([IsReply([SwapReply([MakeSenderBotAdmin(), SendTextMessage(['%h is now admin'], False, None)])])]))
+            IsCommand('/make_?[Aa]dmin', SenderIsBotAdmin([IsReply([SwapReply([MakeSenderBotAdmin(), SendTextMessage(['%h is now admin'], False, None)])])])),
+            Migrate(self)
         ]
 
     def on_receive(self, bot, update):

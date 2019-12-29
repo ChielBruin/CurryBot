@@ -14,6 +14,18 @@ class Cache(object):
     credentials_cipher = None
 
     @classmethod
+    def migrate(cls, from_id, to_id):
+        if from_id in cls.chat_admins:
+            cls.chat_admins[to_id] = cls.chat_admins[from_id]
+            cls.chat_admins.pop(from_id, None)
+
+        cls.chat_keys.pop(from_id, None)
+
+        if from_id in cls.chat_keys:
+            cls.chat_keys[to_id] = cls.chat_keys[from_id]
+            cls.chat_keys.pop(from_id, None)
+
+    @classmethod
     def set_chat_title(cls, chat_id, title):
         cls.chat_titles[str(chat_id)] = title
 
