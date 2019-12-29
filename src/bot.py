@@ -77,7 +77,6 @@ class CurryBot (object):
         self.tick_handlers    = HandlerGroup(self.bot)
         self.button_handlers  = HandlerGroup(self.bot)
 
-        self.dispatcher.add_error_handler(self.on_error)
         self.dispatcher.add_handler(ConfigConversation(self).get_conversation_handler())
         self.dispatcher.add_handler(CallbackQueryHandler(
                             (lambda bot, update, self=self: self.on_receive_callback(bot, update))))
