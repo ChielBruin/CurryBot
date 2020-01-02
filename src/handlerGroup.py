@@ -40,7 +40,7 @@ class HandlerGroup (object):
         handler.update(self._bot)
 
     def update(self):
-        for (_, handler) in self._global_handlers[chat]:
+        for (_, handler) in self._global_handlers:
             handler.update(self._bot)
 
         for chat in self._handlers:
