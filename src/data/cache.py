@@ -57,7 +57,7 @@ class Cache(object):
         if chat_id in cls.chat_admins:
             return user in cls.chat_admins[chat_id]
         else:
-            Logger.log_error('No admin set for chat %d' % chat_id)
+            Logger.log_error('No admin set for chat %s' % chat_id)
             return False
 
 
