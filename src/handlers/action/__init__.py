@@ -5,7 +5,7 @@ from .youtube   import YtPlaylistAppend
 from .rss       import SendRSS, SendReddit
 from .flickr    import SendFlickr
 from .vote      import UpVote, DownVote, GetVote
-from .monitor   import MonitorChatActivity
+from .monitor   import ActivityMonitor
 from .sticker   import SendStickerPack, SendStickers
 from .delete    import Delete
 
@@ -14,5 +14,5 @@ __all__ = [
     'MakeSenderBotAdmin', 'Forward', 'YtPlaylistAppend',
     'SendRSS', 'SendReddit', 'SendFlickr',
     'UpVote', 'DownVote', 'GetVote',
-    'MonitorChatActivity', 'Delete',
+    'ActivityMonitor', 'Delete',
     'SendStickerPack', 'SendStickers']
