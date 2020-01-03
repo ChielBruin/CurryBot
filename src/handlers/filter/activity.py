@@ -40,14 +40,14 @@ class ActivityFilter (MessageHandler):
     def create(cls, stage, data, arg):
         buttons = [[InlineKeyboardButton(text='User', callback_data='user'), InlineKeyboardButton(text='Chat', callback_data='chat')]]
         if stage == 0:
-            return (1, None, Send('Do you want to filter on user or chat inactivity?', buttons=buttons))
+            return (1, data['user_id'], Send('Do you want to filter on user or chat inactivity?', buttons=buttons))
         elif stage == 1:
             if isinstance(arg, str):
                 check_user = arg == 'user'
                 if check_user:
                     return (2, check_user, Send('Now forward me a message from the user to filter on'))
                 else:
-                    chats = [[InlineKeyboardButton(text=Cache.chat_titles[chat_id], callback_data='c_%s' % chat_id)] for chat_id in Cache.chat_titles]
+                    chats = [[InlineKeyboardButton(text=Cache.get_chat_title(chat_id), callback_data='c_%s' % chat_id)] for chat_id in Cache.get_admin_chats(data)]
                     return (2, check_user, Send('Which chat should be filtered on?', buttons=chats))
             else:
                 return (1, None, Send('Please use the buttons', buttons=buttons))

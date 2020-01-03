@@ -332,7 +332,8 @@ class ConfigConversation (object):
 
     def add_handler_callback(self, bot, update, user_data):
         query = update.callback_query
-        user_data['stack'].append( (0, None, int(query.data)) )
+        data = {'user_id': query.from_user.id, 'chat_id': user_data['chat_id']}
+        user_data['stack'].append( (0, data, int(query.data)) )
         return self.handle_stack(bot, query.message, user_data)
 
     def add_handler_button_callback(self, bot, update, user_data):
