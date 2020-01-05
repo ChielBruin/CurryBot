@@ -1,6 +1,7 @@
 from ..messageHandler import MessageHandler
 from configResponse import Send, Done, AskChild, AskCacheKey, AskAPIKey, NoChild, CreateException
 from data.cache import Cache
+from exceptions import FilterException
 
 import hashlib
 
@@ -26,18 +27,21 @@ class AbstractVote (MessageHandler):
         new_val = self.do_count(val)
 
         if msg.from_user.id in users:
-            return val
+            return (False, val)
         else:
             users.append(msg.from_user.id)
             Cache.put([self.key, key], (new_val, users))
-            return new_val
+            return (True, new_val)
 
     def call(self, bot, msg, target, exclude):
         if not msg.text:
             raise Exception('You cannot vote on an empty message')
-        val = self.apply_vote(msg)
-        msg.text = str(val)
-        return self.propagate(bot, msg, target, exclude)
+        res, val = self.apply_vote(msg)
+        if res:
+            msg.text = str(val)
+            return self.propagate(bot, msg, target, exclude)
+        else:
+            raise FilterException()
 
     def has_effect():
         return True
