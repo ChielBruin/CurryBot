@@ -83,7 +83,7 @@ class ActivityFilter (MessageHandler):
     @classmethod
     def _from_dict(cls, dict, children):
         days, seconds = dict['timedelta']
-        return ActivityFilter(dict['id'], dict['type'], dict['key'], timedelta(days=days, seconds=seconds), children)
+        return ActivityFilter(dict['id'], dict['type'] == 'user', dict['key'], timedelta(days=days, seconds=seconds), children)
 
     def _to_dict(self):
         td = self.timedelta
