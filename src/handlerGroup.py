@@ -71,11 +71,18 @@ class HandlerGroup (object):
         return dict, global_dict
 
     def handler_to_dict(self, chat_id, handler_name):
-        if chat_id in self._handlers:
-            for (name, handler) in self._handlers[chat_id]:
-                if name == handler_name:
-                    return handler.to_dict()
-        return {}
+        if chat_id == self.GLOBAL:
+            handlers = self._global_handlers
+        else:
+            if chat_id in self._handlers:
+                handlers = self._handlers[chat_id]
+            else:
+                handlers = []
+
+        for (name, handler) in handlers:
+            if name == handler_name:
+                return handler.to_dict()
+        raise Exception('Handler %s not in %s' % (handler_name, chat_id))
 
     def update_handler_from_dict(self, chat_id, handler_name, dict):
         new_handler = MessageHandler.class_from_dict(dict).from_dict(dict)
