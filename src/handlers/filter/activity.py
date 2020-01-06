@@ -14,20 +14,20 @@ class ActivityFilter (MessageHandler):
         super(ActivityFilter, self).__init__(children)
         self.timedelta = timedelta
         self.cache_key = cache_key
-        self.id = id
+        self.id = str(id)
         self.type = 'user' if is_user else 'chat'
 
     def call(self, bot, msg, target, exclude):
         time = datetime.now()
 
-        cached = Cache.get([self.cache_key, self.type, str(self.id)])
+        cached = Cache.get([self.cache_key, self.type, self.id])
         if cached:
             last_activity = datetime.fromtimestamp(cached)
         else:
             last_activity = datetime.fromtimestamp(0)
 
         if (last_activity + self.timedelta) <= time:
-            Cache.put([self.cache_key, self.type, str(self.id)], time.timestamp())
+            Cache.put([self.cache_key, self.type, self.id], time.timestamp())
             return self.propagate(bot, msg, target, exclude)
         else:
             raise FilterException()
@@ -45,10 +45,10 @@ class ActivityFilter (MessageHandler):
             if isinstance(arg, str):
                 check_user = arg == 'user'
                 if check_user:
-                    return (2, check_user, Send('Now forward me a message from the user to filter on'))
+                    return (2, 'user', Send('Now forward me a message from the user to filter on'))
                 else:
                     chats = [[InlineKeyboardButton(text=Cache.get_chat_title(chat_id), callback_data='c_%s' % chat_id)] for chat_id in Cache.get_admin_chats(data)]
-                    return (2, check_user, Send('Which chat should be filtered on?', buttons=chats))
+                    return (2, 'chat', Send('Which chat should be filtered on?', buttons=chats))
             else:
                 return (1, None, Send('Please use the buttons', buttons=buttons))
         elif stage == 2:
