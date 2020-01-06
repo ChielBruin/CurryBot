@@ -1,50 +1,6 @@
 {
-    "api-token": "<API-TOKEN here>",
-    "Doubt": {
-        "triggers": {
-            "commands" : ["X", "x"],
-            "message": ["[Xx]$"]
-        },
-        "replies": {
-            "stickers" : [{"pack": "user_269942836_by_plakbot"}]
-        },
-        "amount" : 5,
-        "chats": {"include": [310311697]},
-        "replyBehaviour": {
-            "message": "reply -> send*",
-            "reply": "transitiveReply -> send*"
-        }
-    },
-
-    "Hmmm": {
-        "triggers": {
-            "message": ["[Hh][mM]+(\\s.*)?$"],
-            "image": true
-        },
-        "replies": {
-            "stickers": [{"pack": "thonkang"}],
-            "forward": [{"chat_id": "<chat_id>", "message_id": "<msg_id>"}]
-        },
-        "amount" : 1,
-        "replyBehaviour": {
-            "message": "reply -> send*",
-            "reply": "transitiveReply -> send*"
-        }
-    },
-
-    "Haskell": {
-        "triggers": {
-            "message": ["(.*\\s)?(([Hh]askell)|([Cc]urry))(\\s.*)?$"],
-            "url": ["haskell.org"]
-        },
-        "replies": {
-            "messages": ["Are you talking about me?", "Yes, I do like \\2"]
-        },
-        "amount" : 1,
-        "accuracy": "50%",
-        "replyBehaviour": {
-            "message": "reply -> send*",
-            "reply": "transitiveReply -> send*"
-        }
-    }
+  "API-token": "<API-Token here>",
+  "cache-dir": "cache",
+  "encryption-key": "VerySecretKey",
+  "admin-chat": <chat-id>
 }
