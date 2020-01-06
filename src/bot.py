@@ -156,12 +156,12 @@ class CurryBot (object):
     def update_cache(self):
         Logger.log_debug('Updating cache')
 
-        self.message_handlers.update(self.bot)
-        self.button_handlers.update(self.bot)
-        self.tick_handlers.update(self.bot)
+        self.message_handlers.update()
+        self.button_handlers.update()
+        self.tick_handlers.update()
 
         Cache.store_cache()
-        Config.store_config()
+        Config.store_config(self)
 
     def on_exit(self):
         Logger.log_info(msg='Shutting down')

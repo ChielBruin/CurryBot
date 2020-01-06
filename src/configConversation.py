@@ -499,7 +499,6 @@ class ConfigConversation (object):
         return self.SELECT_ACTION
 
     def get_conversation_handler(self):
-        print('^(%s)|(-?[0-9]{5,})$' % HandlerGroup.GLOBAL)
         conv_handler = ConversationHandler(
             entry_points=[CommandHandler('config', self.start, pass_user_data=True)],
             states={
