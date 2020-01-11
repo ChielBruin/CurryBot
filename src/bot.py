@@ -30,6 +30,8 @@ class SelfJoinedChat (MessageHandler):
                 return self.propagate(bot, message, target, exclude)
             except StopIteration as e:
                 raise FilterException()
+        elif message.group_chat_created or message.supergroup_chat_created or message.channel_chat_created:
+            return self.propagate(bot, message, target, exclude)
         else:
             raise FilterException()
 
