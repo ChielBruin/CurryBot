@@ -11,7 +11,7 @@ import handlers
 class ConfigConversation (object):
     HANDLERS = [c for (name, c) in inspect.getmembers(sys.modules['handlers'], inspect.isclass)]
     SELECT_CHAT, SELECT_ACTION, ADD_HANDLER_STEP, ADD_HANDLER_INITIAL, ADD_HANDLER_CHILD, ADD_HANDLER_CACHE_KEY, ADD_HANDLER_API_KEY, REMOVE_HANDLER, COPY_HANDLER, EDIT_HANDLER, EDIT_HANDLER_PARSE = range(11)
-    EXIT, ADD, EDIT, REMOVE, COPY, SKIP = range(6)
+    EXIT, ADD, EDIT, REMOVE, COPY, SKIP, TOGGLE = range(7)
 
     def __init__ (self, bot):
         self.bot = bot
@@ -473,6 +473,12 @@ class ConfigConversation (object):
         except Exception as ex:
             traceback.print_exc()
 
+    def toggle_standalone(self, bot, update, user_data):
+        chat_id = user_data['chat_id']
+        new_state = not Cache.chat_is_standalone(chat_id)
+        Cache.chat_set_standalone(chat_id, new_state)
+        self.send_or_edit(bot, user_data, update.callback_query.message, '%s global handlers' % ('Disabled' if new_state else 'Enabled'))
+        return ConversationHandler.END
 
     def edit_chat(self, bot, update, user_data):
         query = update.callback_query
@@ -480,21 +486,23 @@ class ConfigConversation (object):
         user_data['chat_id'] = chat_id
         chat_name = 'global handlers' if chat_id == HandlerGroup.GLOBAL else Cache.get_chat_title(chat_id)
 
+        toggle_global_text = '%s global handlers' %('Enable' if Cache.chat_is_standalone(chat_id) else 'Disable')
+
         buttons = [[
             InlineKeyboardButton(text='Add a handler', callback_data=str(self.ADD)),
             InlineKeyboardButton(text='Remove handler', callback_data=str(self.REMOVE))
             ],[
             InlineKeyboardButton(text='Edit a handler', callback_data=str(self.EDIT)),
-            InlineKeyboardButton(text='Copy a handler', callback_data=str(self.COPY)),
-            ],[
-            InlineKeyboardButton(text='Exit', callback_data=str(self.EXIT))
+            InlineKeyboardButton(text='Copy a handler', callback_data=str(self.COPY))
         ]]
+        toggle_button = [[InlineKeyboardButton(text=toggle_global_text, callback_data=str(self.TOGGLE))]] if chat_id != HandlerGroup.GLOBAL else []
+        exit_button   = [[InlineKeyboardButton(text='Exit', callback_data=str(self.EXIT))]]
 
         bot.edit_message_text(
             chat_id=query.message.chat_id,
             message_id=query.message.message_id,
             text='Select what to configure for chat \'%s\'' % chat_name,
-            reply_markup=InlineKeyboardMarkup(buttons)
+            reply_markup=InlineKeyboardMarkup(buttons + toggle_button + exit_button)
         )
         return self.SELECT_ACTION
 
@@ -511,7 +519,8 @@ class ConfigConversation (object):
                     CallbackQueryHandler(self.add_start, pattern='^%s$' % self.ADD, pass_user_data=True),
                     CallbackQueryHandler(self.edit_start, pattern='^%s$' % self.EDIT, pass_user_data=True),
                     CallbackQueryHandler(self.remove_start, pattern='^%s$' % self.REMOVE, pass_user_data=True),
-                    CallbackQueryHandler(self.copy_start, pattern='^%s$' % self.COPY, pass_user_data=True)
+                    CallbackQueryHandler(self.copy_start, pattern='^%s$' % self.COPY, pass_user_data=True),
+                    CallbackQueryHandler(self.toggle_standalone, pattern='^%s$' % self.TOGGLE, pass_user_data=True)
                 ],
                 self.COPY_HANDLER: [
                     CallbackQueryHandler(self.copy_select_handler, pattern='^-?[\d]+$', pass_user_data=True),

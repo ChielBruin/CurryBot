@@ -2,7 +2,7 @@ import traceback
 
 from handlers.messageHandler import MessageHandler
 from exceptions import FilterException
-from data import Logger
+from data import Logger, Cache
 
 
 class HandlerGroup (object):
@@ -121,10 +121,9 @@ class HandlerGroup (object):
             messages = [messages]
 
         for message in messages:
-            chat_id = str(message.chat.id)
-            for (_, handler) in self._global_handlers:
-                self._call_handler(handler, bot, message)
-
+            if not Cache.chat_is_standalone(message.chat.id):
+                for (_, handler) in self._global_handlers:
+                    self._call_handler(handler, bot, message)
             chat_id = str(message.chat.id)
             if chat_id in self._handlers:
                 for (_, handler) in self._handlers[chat_id]:

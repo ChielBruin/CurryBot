@@ -9,6 +9,7 @@ class Cache(object):
     _save_cache = {}
     chat_admins = {}
     chat_titles = {}
+    standalone_chats = []
     chat_keys = {}
     api_keys = {}
     credentials_cipher = None
@@ -24,6 +25,21 @@ class Cache(object):
         if from_id in cls.chat_keys:
             cls.chat_keys[to_id] = cls.chat_keys[from_id]
             cls.chat_keys.pop(from_id, None)
+
+    @classmethod
+    def chat_is_standalone(cls, chat_id):
+        chat_id = str(chat_id)
+        return chat_id in cls.standalone_chats
+
+    @classmethod
+    def chat_set_standalone(cls, chat_id, val):
+        chat_id = str(chat_id)
+        if val:
+            if chat_id not in cls.standalone_chats:
+                cls.standalone_chats.append(chat_id)
+        else:
+            if chat_id in cls.standalone_chats:
+                cls.standalone_chats = [x for x in cls.standalone_chats if x != chat_id]
 
     @classmethod
     def set_chat_title(cls, chat_id, title):
@@ -81,6 +97,7 @@ class Cache(object):
             'keys'  : cls.chat_keys,
             'api'   : cls.api_keys,
             'save'  : cls._save_cache,
+            'standalone': cls.standalone_chats
         }
         cache = {}
 
@@ -123,6 +140,7 @@ class Cache(object):
         cls.chat_titles = meta['titles'] if 'titles' in meta else {}
         cls.chat_keys   = meta['keys']   if 'keys'   in meta else {}
         cls.api_keys    = meta['api']    if 'api'    in meta else {}
+        cls.standalone_chats = meta['standalone'] if 'standalone' in meta else []
 
     @classmethod
     def set_cipher_pwd(cls, key):
