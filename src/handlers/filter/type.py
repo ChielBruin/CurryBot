@@ -73,3 +73,115 @@ class IsForward (AbstractIsType):
     @classmethod
     def _from_dict(cls, dict, children):
         return IsReply(children)
+
+
+class Identity (AbstractIsType):
+    def __init__(self, children):
+        super(Identity, self).__init__(children)
+
+    def check(self, message):
+        return True
+
+    @classmethod
+    def get_name(cls):
+        return "Identity"
+
+    @classmethod
+    def _from_dict(cls, dict, children):
+        return Identity(children)
+
+
+class IsPicture (AbstractIsType):
+    def __init__(self, children):
+        super(IsPicture, self).__init__(children)
+
+    def check(self, message):
+        return message.photo != None
+
+    @classmethod
+    def get_name(cls):
+        return "Is picture"
+
+    @classmethod
+    def _from_dict(cls, dict, children):
+        return IsPicture(children)
+
+
+class IsVoice (AbstractIsType):
+    def __init__(self, children):
+        super(IsVoice, self).__init__(children)
+
+    def check(self, message):
+        return message.voice != None
+
+    @classmethod
+    def get_name(cls):
+        return "Is voice message"
+
+    @classmethod
+    def _from_dict(cls, dict, children):
+        return IsVoice(children)
+
+
+class IsAudio (AbstractIsType):
+    def __init__(self, children):
+        super(IsAudio, self).__init__(children)
+
+    def check(self, message):
+        return message.audio != None
+
+    @classmethod
+    def get_name(cls):
+        return "Is audio"
+
+    @classmethod
+    def _from_dict(cls, dict, children):
+        return IsAudio(children)
+
+
+class IsDocument (AbstractIsType):
+    def __init__(self, children):
+        super(IsDocument, self).__init__(children)
+
+    def check(self, message):
+        return message.document != None
+
+    @classmethod
+    def get_name(cls):
+        return "Is document"
+
+    @classmethod
+    def _from_dict(cls, dict, children):
+        return IsDocument(children)
+
+
+class IsSticker (AbstractIsType):
+    def __init__(self, children):
+        super(IsSticker, self).__init__(children)
+
+    def check(self, message):
+        return message.sticker != None
+
+    @classmethod
+    def get_name(cls):
+        return "Is sticker"
+
+    @classmethod
+    def _from_dict(cls, dict, children):
+        return IsSticker(children)
+
+
+class IsVideo (AbstractIsType):
+    def __init__(self, children):
+        super(IsVideo, self).__init__(children)
+
+    def check(self, message):
+        return message.video != None
+
+    @classmethod
+    def get_name(cls):
+        return "Is video"
+
+    @classmethod
+    def _from_dict(cls, dict, children):
+        return IsVideo(children)

@@ -111,9 +111,6 @@ class CurryBot (object):
         if message.caption:
             message.text = message.caption
 
-        if message.text is None:
-            message.text = ''
-
         self.on_receive_message(bot, message)
 
     def on_receive_message(self, bot, message):

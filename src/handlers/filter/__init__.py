@@ -4,7 +4,7 @@ from .chatjoin  import UserJoinedChat
 from .activity  import ActivityFilter
 from .user      import SenderIsBotAdmin, IsFrom
 from .command   import IsCommand
-from .type      import IsReply, IsForward
+from .type      import IsReply, IsForward, Identity, IsPicture, IsVoice, IsAudio, IsDocument, IsSticker, IsVideo
 from .pick      import PickWeighted, PickUniform, PercentageFilter
 from .intfilter import IntFilter
 from .traversal import Try
@@ -13,6 +13,7 @@ __all__ = [
     'MatchFilter', 'SearchFilter', 'TimeFilter', 'UserJoinedChat',
     'ActivityFilter', 'SenderIsBotAdmin', 'IsFrom',
     'IsCommand', 'IsReply', 'IsForward',
+    'Identity', 'IsPicture', 'IsVoice', 'IsAudio', 'IsDocument', 'IsSticker', 'IsVideo',
     'PickWeighted', 'PickUniform', 'PercentageFilter',
     'IntFilter', 'Try'
 ]
