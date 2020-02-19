@@ -1,4 +1,5 @@
 from ..messageHandler import MessageHandler
+from data.logger import Logger
 from configResponse import Send, Done, AskChild, CreateException
 
 import feedparser, hashlib, re
@@ -17,6 +18,9 @@ class SendRSS (MessageHandler):
     def get_item(self, offset):
         feed = feedparser.parse(self.url)
         items = feed['items']
+	if len(items) is 0:
+            Logger.log_warning('Empty feed for %s' % self.url)
+	    return None
         return items[min(len(items) - 1, self.index + offset)]
 
     def build_text(self, item):
@@ -27,6 +31,8 @@ class SendRSS (MessageHandler):
 
     def select_item(self, exclude, offset=0):
         item = self.get_item(offset)
+	if item is None:
+	    return (None, None)
         id = str(hashlib.md5(item['title'].encode()).hexdigest())
 
         if id in exclude:
@@ -36,6 +42,8 @@ class SendRSS (MessageHandler):
 
     def call(self, bot, msg, target, exclude):
         (id, item) = self.select_item(exclude)
+        if item is None:
+            return []
         text = self.build_text(item)
         bot.send_message(chat_id=msg.chat.id, text=text, reply_to_message_id=target)
         return [id]
