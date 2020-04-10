@@ -26,11 +26,13 @@ class AbstractSendMessage (RandomMessageHandler):
             reply_text = reply_text.replace('%f', user.first_name)
         if '%l' in reply_text and user.last_name:
             reply_text = reply_text.replace('%l', user.last_name)
-
+        if '%n' in reply_text and user.first_name:
+            name = '%s %s' % (user.first_name, user.last_name) if user.last_name else user.first_name
+            reply_text = reply_text.replace('%n', name)
         if '%s' in reply_text:
-            return reply_text % message.text
-        else:
-            return reply_text
+            reply_text = reply_text % message.text
+
+        return reply_text
 
     def call(self, bot, msg, target, exclude):
         if msg.text is None:
