@@ -6,11 +6,10 @@ from currybot.config import Config
 
 
 def main():
-    '''
+    """
     Main function.
     Loads the config and starts the bot.
-    '''
-
+    """
 
     parser = argparse.ArgumentParser()
     parser.add_argument('config', type=argparse.FileType('r'))
@@ -65,6 +64,7 @@ def main():
     Config.load_config(curry_bot)
 
     curry_bot.start()
+
 
 if __name__ == '__main__':
     main()

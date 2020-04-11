@@ -15,10 +15,10 @@ class AbstractSendMessage(RandomMessageHandler):
         Cache.config_entry(self._id, False)
 
     def apply_message(self, message, reply_text):
-        '''
+        """
         Given the original message and the reply text pattern,
         try filling in the holes in the reply pattern.
-        '''
+        """
         user = message.from_user
         if '%h' in reply_text and user.username:
             reply_text = reply_text.replace('%h', user.username)
@@ -37,7 +37,7 @@ class AbstractSendMessage(RandomMessageHandler):
     def call(self, bot, msg, target, exclude):
         if msg.text is None:
             msg.text = ''
-        
+
         msg_data = msg.text[:64] if len(msg.text) > 64 else msg.text
         (id, message) = self.select_random_option(exclude=exclude)
         applied_message = self.apply_message(msg, message)
