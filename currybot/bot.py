@@ -1,24 +1,24 @@
+from datetime import datetime, timedelta
+import traceback
+
 from telegram.ext import Updater, Filters, CallbackQueryHandler
 from telegram.ext import MessageHandler as TelegramMessageHandler
 from telegram import Chat, Message
-import traceback
 
-from datetime import datetime, timedelta
+from currybot.data import Logger, Cache
+from currybot.config import Config
+from currybot.configConversation import ConfigConversation
+from currybot.exceptions import FilterException
+from currybot.handlerGroup import HandlerGroup
 
-from .data import Logger, Cache
-from .config import Config
-from .configConversation import ConfigConversation
-from .exceptions import FilterException
-from .handlerGroup import HandlerGroup
-
-from .handlers.messageHandler import MessageHandler
-from .handlers import MakeSenderBotAdmin, IsCommand, SendTextMessage, IsReply, SwapReply, SenderIsBotAdmin
+from currybot.handlers.messageHandler import MessageHandler
+from currybot.handlers import MakeSenderBotAdmin, IsCommand, SendTextMessage, IsReply, SwapReply, SenderIsBotAdmin
 
 
-class SelfJoinedChat (MessageHandler):
-    '''
+class SelfJoinedChat(MessageHandler):
+    """
     It makes no sense that users add this filter to their configs, as it can only be added after the bot has already joined.
-    '''
+    """
     def __init__(self, children):
         super(SelfJoinedChat, self).__init__(children)
 
@@ -28,7 +28,7 @@ class SelfJoinedChat (MessageHandler):
                 next(filter(lambda usr: usr.id == bot.id, message.new_chat_members))
                 message.text = bot.first_name
                 return self.propagate(bot, message, target, exclude)
-            except StopIteration as e:
+            except StopIteration:
                 raise FilterException()
         elif message.group_chat_created or message.supergroup_chat_created or message.channel_chat_created:
             return self.propagate(bot, message, target, exclude)
@@ -36,7 +36,7 @@ class SelfJoinedChat (MessageHandler):
             raise FilterException()
 
 
-class Migrate (MessageHandler):
+class Migrate(MessageHandler):
     def __init__(self, bot):
         super(Migrate, self).__init__([])
         self._bot = bot
@@ -55,11 +55,11 @@ class Migrate (MessageHandler):
             raise FilterException()
 
 
-class CurryBot (object):
+class CurryBot(object):
     def __init__(self, admin_chat):
-        '''
+        """
         Initialize CurryBot
-        '''
+        """
         self.admin_chat = admin_chat
         self.bot = None
         self.updater = None
@@ -116,11 +116,11 @@ class CurryBot (object):
         self.on_receive_message(bot, message)
 
     def on_receive_message(self, bot, message):
-        '''
+        """
         Global message handler.
         Forwards the messages to the other handlers if applicable.
         Always calls the handler that checks if the bot was added to a group.
-        '''
+        """
         try:
             for handler in self._global_handlers:
                 self.message_handlers._call_handler(handler, bot, message)
@@ -178,9 +178,9 @@ class CurryBot (object):
         )
 
     def start(self):
-        '''
+        """
         Start the bot.
-        '''
+        """
         self.updater.start_polling()
 
         # Set up the tick trigger

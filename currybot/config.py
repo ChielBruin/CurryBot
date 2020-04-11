@@ -1,16 +1,19 @@
-import os, json
+import json
+import os
 
-from .data import Logger
+from currybot.data import Logger
 
 
-class Config (object):
+class Config(object):
+    config_location = None
+
     @classmethod
     def set_config_location(cls, loc):
         Logger.log_trace('Config location set to \'%s\'' % loc)
         if not os.path.exists(loc):
             os.makedirs(loc)
         if os.path.isfile(loc):
-            Logger.log_error('The specified config location must be a folder, not \'%\'' % loc)
+            Logger.log_error('The specified config location must be a folder, \'%s\' is a file' % loc)
             raise Exception()
         cls.config_location = os.path.join(loc, 'bot_config.json')
 
@@ -41,7 +44,7 @@ class Config (object):
                 content = config_file.read()
                 try:
                     config = json.loads(content)
-                except json.JSONDecodeError as ex:
+                except json.JSONDecodeError:
                     config = {}
                     Logger.log_error('Malformed config file')
 

@@ -43,7 +43,8 @@ class AbstractRegexFilter(MessageHandler):
                     groups = list(range(pattern.groups + 1)) + list(pattern.groupindex.keys())
                     if groups:
                         buttons = [[InlineKeyboardButton(text=str(group), callback_data='r_' + str(group))] for group in groups]
-                        msg = 'Select a captured group to replace the original message, select group 0 to retain the entire match'
+                        msg = 'Select a captured group to replace the original message, ' \
+                              'select group 0 to retain the entire match'
                         return (2, arg.text, Send(msg=msg, buttons=buttons))
                     else:
                         return (3, (arg.text, None, []), AskChild())
@@ -53,7 +54,7 @@ class AbstractRegexFilter(MessageHandler):
                 return (1, data, Send('Please send text and nothing else'))
         elif stage == 2 and arg:
             if isinstance(arg, Message):
-                raise CreateException() #TODO: resend the buttons
+                raise CreateException()  #TODO: resend the buttons
             arg = arg[2:]
             try:
                 group = int(arg)
@@ -80,7 +81,7 @@ class AbstractRegexFilter(MessageHandler):
         raise Exception('Not implemented')
 
 
-class MatchFilter (AbstractRegexFilter):
+class MatchFilter(AbstractRegexFilter):
     def matcher(self, regex, text):
         return re.match(self._regex, text)
 

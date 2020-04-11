@@ -50,7 +50,7 @@ def main():
 
     if len(encryption_key) > 32:
         Logger.log_error('Encryption key too long. (For some reason it is not allowed)')
-    encryption_key = (encryption_key * (32 // len(encryption_key) + 1))[0:32] # Repeat password to make it 32 characters long
+    encryption_key = (encryption_key * (32 // len(encryption_key) + 1))[0:32]  # Repeat password to make it 32 characters long
     Cache.set_cipher_pwd(encryption_key)
 
     curry_bot = CurryBot(admin_chat)

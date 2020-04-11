@@ -578,7 +578,7 @@ class ConfigConversation(object):
         if data['user_msg']:
             bot.send_message(
                 chat_id=original.chat_id,
-                reply_markup = buttons,
+                reply_markup=buttons,
                 text=message
             )
         else:
