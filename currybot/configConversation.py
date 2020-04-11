@@ -134,7 +134,7 @@ class ConfigConversation(object):
         tick_handlers = [(idx, name) for (idx, (name, handler)) in enumerate(self.bot.tick_handlers.list(chat_id)) if not handler.is_private()]
         tick_buttons = [InlineKeyboardButton(text='%s (tick)' % name, callback_data='_1_%d' % idx) for (idx, name) in tick_handlers]
         button_handlers = [(idx, name) for (idx, (name, handler)) in enumerate(self.bot.button_handlers.list(chat_id)) if not handler.is_private()]
-        button_buttons = [InlineKeyboardButton(text='%s (button)' % name, callback_data='_2_%d' % idx) for (idx, name) in tick_handlers]
+        button_buttons = [InlineKeyboardButton(text='%s (button)' % name, callback_data='_2_%d' % idx) for (idx, name) in button_handlers]
 
         buttons = [[button] for button in msg_buttons + tick_buttons + button_buttons]
         if buttons:
