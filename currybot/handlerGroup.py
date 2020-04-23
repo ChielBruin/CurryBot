@@ -30,6 +30,8 @@ class HandlerGroup(object):
             self._handlers[chat] = [(name, handler) for (name, handler) in self._handlers[chat] if not name == handler_name]
 
     def register(self, chat, handler, name):
+        if handler is None:
+            raise Exception('Cannot register None as a handler')
         chat = str(chat)
         if chat == self.GLOBAL:
             self._global_handlers.append( (name, handler) )

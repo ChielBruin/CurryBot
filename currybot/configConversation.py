@@ -256,7 +256,7 @@ class ConfigConversation(object):
 
     def handle_stack(self, bot, msg, user_data):
         stack = user_data['stack']
-        if stack:
+        if not stack:
             handler = user_data['acc']
             chat_id = user_data['chat_id']
             name = user_data['name']
