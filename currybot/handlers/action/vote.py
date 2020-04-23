@@ -8,9 +8,10 @@ from currybot.handlers.messageHandler import MessageHandler
 
 
 class AbstractVote(MessageHandler):
-    def __init__(self, key, children):
+    def __init__(self, key, children, multivote=False):
         super(AbstractVote, self).__init__(children)
         self.key = key
+        self.multivote = multivote
 
     def do_count(self, count):
         raise Exception('Not implemented')
@@ -28,7 +29,10 @@ class AbstractVote(MessageHandler):
         new_val = self.do_count(val)
 
         if msg.from_user.id in users:
-            return (False, val)
+            if self.multivote:
+                return (True, new_val)
+            else:
+                return (False, val)
         else:
             users.append(msg.from_user.id)
             Cache.put([self.key, key], (new_val, users))
@@ -52,7 +56,7 @@ class AbstractVote(MessageHandler):
         return False
 
     def _to_dict(self):
-        return {'key': self.key}
+        return {'key': self.key, 'multivote': self.multivote}
 
     @classmethod
     def create(cls, stage, data, arg):
@@ -82,7 +86,8 @@ class UpVote(AbstractVote):
 
     @classmethod
     def _from_dict(cls, dict, children):
-        return UpVote(dict['key'], children)
+        return UpVote(dict['key'], children, dict['multivote'] if 'multivote' in dict else False)
+
 
 class DownVote(AbstractVote):
     def do_count(self, count):
@@ -94,7 +99,7 @@ class DownVote(AbstractVote):
 
     @classmethod
     def _from_dict(cls, dict, children):
-        return UpVote(dict['key'], children)
+        return UpVote(dict['key'], children, dict['multivote'] if 'multivote' in dict else False)
 
 
 class SetVote(AbstractVote):
