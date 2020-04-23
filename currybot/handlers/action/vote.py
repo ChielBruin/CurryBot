@@ -1,6 +1,7 @@
 import hashlib
+import re
 
-from currybot.configResponse import Done, AskChild, AskCacheKey, CreateException
+from currybot.configResponse import Done, AskChild, AskCacheKey, CreateException, Send
 from currybot.data.cache import Cache
 from currybot.exceptions import FilterException
 from currybot.handlers.messageHandler import MessageHandler
@@ -83,8 +84,7 @@ class UpVote(AbstractVote):
     def _from_dict(cls, dict, children):
         return UpVote(dict['key'], children)
 
-
-class DownVote (AbstractVote):
+class DownVote(AbstractVote):
     def do_count(self, count):
         return count - 1
 
@@ -95,6 +95,48 @@ class DownVote (AbstractVote):
     @classmethod
     def _from_dict(cls, dict, children):
         return UpVote(dict['key'], children)
+
+
+class SetVote(AbstractVote):
+    def __init__(self, key, votes, children):
+        super(SetVote, self).__init__(key, children)
+        self.votes = votes
+
+    def do_count(self, count):
+        return self.votes
+
+    @classmethod
+    def get_name(cls):
+        return "Set the number of votes"
+
+    @classmethod
+    def _from_dict(cls, dict, children):
+        return UpVote(dict['key'], dict['votes'], children)
+
+    def _to_dict(self):
+        return {'key': self.key, 'votes': self.votes}
+
+    @classmethod
+    def create(cls, stage, data, arg):
+        if stage == 0:
+            return (1, None, AskCacheKey(default={}))
+        elif stage == 1 and arg:
+            return (2, arg, Send('Which value should the votes be updated to?'))
+        elif stage == 2 and arg:
+            if arg.text and re.match(r'-?[\d]+', arg.text):
+                return (3, (arg, int(arg.text), []), AskChild())
+            else:
+                return (2, arg, Send('That is not a valid number of votes'))
+        elif stage == 3 and arg:
+            if isinstance(arg, MessageHandler):
+                data[2].append(arg)
+                return (3, data, AskChild())
+            else:
+                key, votes, children = data
+                return (-1, None, Done(SetVote(key, votes, children)))
+        else:
+            print(stage, data, arg)
+            raise CreateException('Invalid create state for Vote')
 
 
 class GetVote(AbstractVote):
