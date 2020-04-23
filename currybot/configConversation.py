@@ -565,8 +565,7 @@ class ConfigConversation(object):
     def get_conversation_handler(self):
         conv_handler = ConversationHandler(
             entry_points=[CommandHandler('config', self.start, pass_user_data=True)],
-            conversation_timeout=20,  # Timeout after an hour
-            # conversation_timeout=3600,  # Timeout after an hour
+            conversation_timeout=3600,  # Timeout after an hour
             states={
                 self.SELECT_CHAT: [
                     CallbackQueryHandler(self.end, pattern='^%s$' % self.EXIT, pass_user_data=True),
