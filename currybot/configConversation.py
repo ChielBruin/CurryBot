@@ -4,14 +4,40 @@ import sys
 import traceback
 
 
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import CommandHandler, CallbackQueryHandler, ConversationHandler, MessageHandler
 from telegram.ext.filters import Filters
 
 from currybot.configResponse import Send, Done, AskChild, NoChild, AskCacheKey, AskAPIKey, CreateException
 from currybot.data import Logger, Cache
 from currybot.handlerGroup import HandlerGroup
-import currybot.handlers
+import currybot.handlers  # This import is required, even when it says its not
+
+
+def on_error():
+    """
+    Decorator for conversation handlers.
+    Wraps it with a try/except.
+    """
+    def decorate(function):
+        """
+        Decorate the given function with an exception handler.
+        If an exception is raised, the exception will be logged.
+        """
+        def applicator(*args, **kwargs):
+            try:
+                return function(*args, **kwargs)
+            except Exception as ex:
+                has_chat_info = (len(args) > 2 and isinstance(args[2], Update) and args[2].effective_chat)
+                chat_id = args[2].effective_chat.id if has_chat_info else None
+
+                Logger.log_exception(ex, 'Exception while handling conversation in \'%s\'' % function.__name__, chat=chat_id)
+                traceback.print_exc()
+                return ConversationHandler.END
+
+        return applicator
+
+    return decorate
 
 
 class ConfigConversation(object):
@@ -22,6 +48,7 @@ class ConfigConversation(object):
     def __init__ (self, bot):
         self.bot = bot
 
+    @on_error()
     def start(self, bot, update, user_data):
         if not update.message.chat.type == 'private':
             update.message.reply_text(
@@ -50,11 +77,13 @@ class ConfigConversation(object):
         )
         return self.SELECT_CHAT
 
+    @on_error()
     def end(self, bot, update, user_data):
         msg = update.callback_query.message
         self.send_or_edit(bot, user_data, msg, 'See you next time!')
         return ConversationHandler.END
 
+    @on_error()
     def edit_start(self, bot, update, user_data):
         chat_id = user_data['chat_id']
         message_buttons = [[InlineKeyboardButton(text='%s (message)' % name,    callback_data='_0_%d' % idx)] for (idx, (name, _)) in enumerate(self.bot.message_handlers.list(chat_id))]
@@ -64,6 +93,7 @@ class ConfigConversation(object):
         self.send_or_edit(bot, user_data, update.callback_query.message, 'Select a handler to edit', buttons=message_buttons + tick_buttons + button_buttons + exit_button)
         return self.EDIT_HANDLER
 
+    @on_error()
     def edit_send(self, bot, update, user_data):
         if update.callback_query.data[1] == '3':
             self.send_or_edit(bot, user_data, update.callback_query.message, 'Maybe next time')
@@ -88,6 +118,7 @@ class ConfigConversation(object):
         except:
             traceback.print_exc()
 
+    @on_error()
     def edit_end(self, bot, update, user_data):
         user_data['user_msg'] = True
         try:
@@ -111,6 +142,7 @@ class ConfigConversation(object):
             self.send_or_edit(bot, user_data, update.message, 'Invalid input, it must be a valid config')
             return self.EDIT_HANDLER_PARSE
 
+    @on_error()
     def copy_start(self, bot, update, user_data):
         msg = update.callback_query.message
         chats = Cache.get_admin_chats(update._effective_user.id)
@@ -125,6 +157,7 @@ class ConfigConversation(object):
             self.send_or_edit(bot, user_data, msg, 'No chats to copy from')
             return ConversationHandler.END
 
+    @on_error()
     def copy_select_handler(self, bot, update, user_data):
         chat_id = update.callback_query.data
         user_data['acc'] = chat_id
@@ -145,28 +178,27 @@ class ConfigConversation(object):
             self.send_or_edit(bot, user_data, update.callback_query.message, 'No handlers to copy from this chat')
             return ConversationHandler.END
 
+    @on_error()
     def copy_handler(self, bot, update, user_data):
-        try:
-            type = int(update.callback_query.data[1])
-            if type == 0:
-                handler_group = self.bot.message_handlers
-            elif type == 1:
-                handler_group = self.bot.tick_handlers
-            elif type == 2:
-                handler_group = self.bot.button_handlers
-            else:
-                raise Exception('Unknown handler type %d' % type)
+        type = int(update.callback_query.data[1])
+        if type == 0:
+            handler_group = self.bot.message_handlers
+        elif type == 1:
+            handler_group = self.bot.tick_handlers
+        elif type == 2:
+            handler_group = self.bot.button_handlers
+        else:
+            raise Exception('Unknown handler type %d' % type)
 
-            idx = int(update.callback_query.data[3:])
-            chat_id = user_data['acc']
-            (name, handler) = handler_group.list(chat_id)[idx]
-            handler_group.register(chat=user_data['chat_id'], name=name, handler=handler)
+        idx = int(update.callback_query.data[3:])
+        chat_id = user_data['acc']
+        (name, handler) = handler_group.list(chat_id)[idx]
+        handler_group.register(chat=user_data['chat_id'], name=name, handler=handler)
 
-            self.send_or_edit(bot, user_data, update.callback_query.message, 'Copied \'%s\'' % name)
-            return ConversationHandler.END
-        except:
-            traceback.print_exc()
+        self.send_or_edit(bot, user_data, update.callback_query.message, 'Copied \'%s\'' % name)
+        return ConversationHandler.END
 
+    @on_error()
     def remove_start(self, bot, update, user_data):
         chat_id = user_data['chat_id']
         message_buttons = [[InlineKeyboardButton(text='%s (message)' % name,    callback_data='_0_%d' % idx)] for (idx, (name, _)) in enumerate(self.bot.message_handlers.list(chat_id))]
@@ -176,6 +208,7 @@ class ConfigConversation(object):
         self.send_or_edit(bot, user_data, update.callback_query.message, 'Select a handler to remove', buttons=message_buttons + tick_buttons + button_buttons + exit_button)
         return self.REMOVE_HANDLER
 
+    @on_error()
     def remove_end(self, bot, update, user_data):
         if update.callback_query.data[1] == '3':
             self.send_or_edit(bot, user_data, update.callback_query.message, 'Maybe next time')
@@ -200,6 +233,7 @@ class ConfigConversation(object):
         except:
             traceback.print_exc()
 
+    @on_error()
     def add_start(self, bot, update, user_data):
         buttons = [[
          InlineKeyboardButton(text='Every minute', callback_data='0'),
@@ -209,16 +243,19 @@ class ConfigConversation(object):
         self.send_or_edit(bot, user_data, update.callback_query.message, 'Should the rule trigger on receiving a message, every minute or when a button is pressed?', buttons=buttons)
         return self.ADD_HANDLER_INITIAL
 
+    @on_error()
     def add_initial_type_msg(self, bot, update, user_data):
         message = update.callback_query.message
         user_data['type'] = 'msg'
         return self._add_initial_type(bot, message, user_data)
 
+    @on_error()
     def add_initial_type_tick(self, bot, update, user_data):
         message = update.callback_query.message
         user_data['type'] = 'tick'
         return self._add_initial_type(bot, message, user_data)
 
+    @on_error()
     def add_initial_type_button(self, bot, update, user_data):
         message = update.callback_query.message
         user_data['type'] = 'button'
@@ -228,6 +265,7 @@ class ConfigConversation(object):
         self.send_or_edit(bot, data, message, 'Please send me a name for the new handler')
         return self.ADD_HANDLER_INITIAL
 
+    @on_error()
     def add_initial(self, bot, update, user_data):
         """
         Add a handler to the current chat
@@ -254,7 +292,7 @@ class ConfigConversation(object):
             self.send_or_edit(bot, user_data, update.message, message)
             return self.ADD_HANDLER_INITIAL
 
-    def handle_stack(self, bot, msg, user_data):
+    def _handle_stack(self, bot, msg, user_data):
         stack = user_data['stack']
         if not stack:
             handler = user_data['acc']
@@ -292,7 +330,7 @@ class ConfigConversation(object):
             elif isinstance(res, Done):
                 user_data['acc'] = res.handler
                 user_data['stack'] = user_data['stack'][:-1]
-                return self.handle_stack(bot, msg, user_data)
+                return self._handle_stack(bot, msg, user_data)
 
             elif isinstance(res, AskChild):
                 name = current.get_name()
@@ -336,26 +374,31 @@ class ConfigConversation(object):
             self.send_or_edit(bot, user_data, msg, 'Error while processing handler create event! Please report your steps to the developer')
             return ConversationHandler.END
 
+    @on_error()
     def add_handler_callback(self, bot, update, user_data):
         query = update.callback_query
         data = {'user_id': query.from_user.id, 'chat_id': user_data['chat_id']}
         user_data['stack'].append( (0, data, int(query.data)) )
-        return self.handle_stack(bot, query.message, user_data)
+        return self._handle_stack(bot, query.message, user_data)
 
+    @on_error()
     def add_handler_button_callback(self, bot, update, user_data):
         query = update.callback_query
         user_data['acc'] = query.data
-        return self.handle_stack(bot, query.message, user_data)
+        return self._handle_stack(bot, query.message, user_data)
 
+    @on_error()
     def add_handler_message(self, bot, update, user_data):
         user_data['user_msg'] = True
         user_data['acc'] = update.message
-        return self.handle_stack(bot, update.message, user_data)
+        return self._handle_stack(bot, update.message, user_data)
 
+    @on_error()
     def add_handler_no_child_callback(self, bot, update, user_data):
         user_data['acc'] = NoChild()
-        return self.handle_stack(bot, update.callback_query.message, user_data)
+        return self._handle_stack(bot, update.callback_query.message, user_data)
 
+    @on_error()
     def add_handler_select_child_callback(self, bot, update, user_data):
         stack = user_data['stack']
         current_idx = stack[-1][2]
@@ -369,6 +412,7 @@ class ConfigConversation(object):
         self.send_or_edit(bot, user_data, update.callback_query.message, message, buttons)
         return self.ADD_HANDLER_CHILD
 
+    @on_error()
     def add_handler_select_cache_key_callback(self, bot, update, user_data):
         stack = user_data['stack']
         current_idx = stack[-1][2]
@@ -385,11 +429,13 @@ class ConfigConversation(object):
         self.send_or_edit(bot, user_data, update.callback_query.message, message, buttons)
         return self.ADD_HANDLER_CACHE_KEY
 
+    @on_error()
     def add_handler_new_cache_key_callback(self, bot, update, user_data):
         message = 'Please send me a cache key to use (max length is 32)'
         self.send_or_edit(bot, user_data, update.callback_query.message, message)
         return self.ADD_HANDLER_CACHE_KEY
 
+    @on_error()
     def add_handler_cache_key_msg(self, bot, update, user_data):
         user_data['user_msg'] = True
         if update.message.text:
@@ -405,79 +451,77 @@ class ConfigConversation(object):
                 if not Cache.contains(key):
                     Cache.put(key, default)
                 Cache.add_chat_key(key, user_data['chat_id'])
-                return self.handle_stack(bot, update.message, user_data)
+                return self._handle_stack(bot, update.message, user_data)
         else:
             message = 'Invalid key. It must contain text'
             self.send_or_edit(bot, user_data, update.message, message)
             return self.ADD_HANDLER_CACHE_KEY
 
+    @on_error()
     def add_handler_key_callback(self, bot, update, user_data):
         query = update.callback_query
         user_data['acc'] = query.data[2:]
-        return self.handle_stack(bot, query.message, user_data)
+        return self._handle_stack(bot, query.message, user_data)
 
+    @on_error()
     def add_handler_select_api_key_callback(self, bot, update, user_data):
-        try:
-            user_id = update.callback_query.from_user.id
+        user_id = update.callback_query.from_user.id
+        chat_id = user_data['chat_id']
+        keys = [key for key in Cache.get_api_keys(chat_id)]
 
-            chat_id = user_data['chat_id']
-            keys = [key for key in Cache.get_api_keys(chat_id)]
+        if keys:
+            message = 'You do not have access to any existing API keys, please send me a valid key name'
+            buttons = None
 
-            if keys:
-                message = 'You do not have access to any existing API keys, please send me a valid key name'
-                buttons = None
+        else:
+            message = 'Select an API key'
+            buttons = [[InlineKeyboardButton(text=key, callback_data='0_' + str(key))] for key in keys]
+            user_data['stack'] = user_data['stack'][:-1]
+        self.send_or_edit(bot, user_data, update.callback_query.message, message, buttons)
+        return self.ADD_HANDLER_API_KEY
 
-            else:
-                message = 'Select an API key'
-                buttons = [[InlineKeyboardButton(text=key, callback_data='0_' + str(key))] for key in keys]
-                user_data['stack'] = user_data['stack'][:-1]
-            self.send_or_edit(bot, user_data, update.callback_query.message, message, buttons)
-            return self.ADD_HANDLER_API_KEY
-        except Exception:
-            traceback.print_exc()
-
+    @on_error()
     def add_handler_new_api_key_callback(self, bot, update, user_data):
         message = 'Please send me a name for your API key (max length is 32)'
         self.send_or_edit(bot, user_data, update.callback_query.message, message)
         return self.ADD_HANDLER_API_KEY
 
+    @on_error()
     def add_handler_api_key_msg(self, bot, update, user_data):
         user_data['user_msg'] = True
-        try:
-            if update.message.text:
-                val = update.message.text.strip()
+        if update.message.text:
+            val = update.message.text.strip()
 
-                (stage, data, idx) = user_data['stack'][-1]
-                if stage == 0 and (Cache.contains(val) or len(val) >= 32 or val.startswith('$')):
-                    message = 'Invalid API key name. Either it is already in use, it starts with a $, or it is too long'
-                    self.send_or_edit(bot, user_data, update.message, message)
-                else:
-                    (stage, data, res) = self.HANDLERS[idx].create_api(stage, data, val)
-                    user_data['stack'][-1] = (stage, data, idx)
-
-                    if isinstance(res, Send):
-                        self.send_or_edit(bot, user_data, update.message, res.msg, res.buttons)
-                        return self.ADD_HANDLER_API_KEY
-                    elif isinstance(res, Done):
-                        (key, value) = res.handler
-                        user_data['acc'] = key
-                        Cache.config_entry(key, True)
-                        Cache.add_api_key(key, user_data['chat_id'])
-                        Cache.put(key, value, encrypt=True)
-
-                        user_data['stack'] = user_data['stack'][:-1]
-                        return self.handle_stack(bot, update.message, user_data)
-                    else:
-                        print(stage, data, res)
-                        self.send_or_edit(bot, user_data, update.message, 'Unexpected API creation state! Please report your steps to the developer')
-                        return ConversationHandler.END
-            else:
-                message = 'Invalid reply. It must contain text'
+            (stage, data, idx) = user_data['stack'][-1]
+            if stage == 0 and (Cache.contains(val) or len(val) >= 32 or val.startswith('$')):
+                message = 'Invalid API key name. Either it is already in use, it starts with a $, or it is too long'
                 self.send_or_edit(bot, user_data, update.message, message)
-                return self.ADD_HANDLER_API_KEY
-        except Exception:
-            traceback.print_exc()
+            else:
+                (stage, data, res) = self.HANDLERS[idx].create_api(stage, data, val)
+                user_data['stack'][-1] = (stage, data, idx)
 
+                if isinstance(res, Send):
+                    self.send_or_edit(bot, user_data, update.message, res.msg, res.buttons)
+                    return self.ADD_HANDLER_API_KEY
+                elif isinstance(res, Done):
+                    (key, value) = res.handler
+                    user_data['acc'] = key
+                    Cache.config_entry(key, True)
+                    Cache.add_api_key(key, user_data['chat_id'])
+                    Cache.put(key, value, encrypt=True)
+
+                    user_data['stack'] = user_data['stack'][:-1]
+                    return self._handle_stack(bot, update.message, user_data)
+                else:
+                    print(stage, data, res)
+                    self.send_or_edit(bot, user_data, update.message, 'Unexpected API creation state! Please report your steps to the developer')
+                    return ConversationHandler.END
+        else:
+            message = 'Invalid reply. It must contain text'
+            self.send_or_edit(bot, user_data, update.message, message)
+            return self.ADD_HANDLER_API_KEY
+
+    @on_error()
     def toggle_standalone(self, bot, update, user_data):
         chat_id = user_data['chat_id']
         new_state = not Cache.chat_is_standalone(chat_id)
@@ -485,6 +529,7 @@ class ConfigConversation(object):
         self.send_or_edit(bot, user_data, update.callback_query.message, '%s global handlers' % ('Disabled' if new_state else 'Enabled'))
         return ConversationHandler.END
 
+    @on_error()
     def edit_chat(self, bot, update, user_data):
         query = update.callback_query
         chat_id = query.data
@@ -511,9 +556,17 @@ class ConfigConversation(object):
         )
         return self.SELECT_ACTION
 
+    @on_error()
+    def cancel(self, bot, update, user_data):
+        user_data['user_msg'] = True
+        self.send_or_edit(bot, user_data, update.message, 'See you next time')
+        return ConversationHandler.END
+
     def get_conversation_handler(self):
         conv_handler = ConversationHandler(
             entry_points=[CommandHandler('config', self.start, pass_user_data=True)],
+            conversation_timeout=20,  # Timeout after an hour
+            # conversation_timeout=3600,  # Timeout after an hour
             states={
                 self.SELECT_CHAT: [
                     CallbackQueryHandler(self.end, pattern='^%s$' % self.EXIT, pass_user_data=True),
@@ -569,7 +622,7 @@ class ConfigConversation(object):
                     MessageHandler(Filters.all, self.edit_end, pass_user_data=True)
                 ]
             },
-            fallbacks=[]
+            fallbacks=[CommandHandler('cancel', self.cancel, pass_user_data=True)]
         )
         return conv_handler
 
