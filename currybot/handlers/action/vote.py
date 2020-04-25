@@ -86,7 +86,7 @@ class UpVote(AbstractVote):
 
     @classmethod
     def _from_dict(cls, dict, children):
-        return UpVote(dict['key'], children, dict['multivote'] if 'multivote' in dict else False)
+        return UpVote(dict['key'], children, dict['multivote'])
 
 
 class DownVote(AbstractVote):
@@ -99,7 +99,7 @@ class DownVote(AbstractVote):
 
     @classmethod
     def _from_dict(cls, dict, children):
-        return UpVote(dict['key'], children, dict['multivote'] if 'multivote' in dict else False)
+        return UpVote(dict['key'], children, dict['multivote'])
 
 
 class SetVote(AbstractVote):
