@@ -8,11 +8,13 @@ from .vote      import UpVote, DownVote, GetVote, SetVote
 from .monitor   import ActivityMonitor
 from .sticker   import SendStickerPack, SendStickers
 from .delete    import Delete
+from .title     import SetTitle
+from .pin       import Pin
 
 __all__ = [
     'SendTextMessage', 'SendHTMLMessage', 'SendMarkdownMessage',
     'MakeSenderBotAdmin', 'Forward', 'YtPlaylistAppend',
     'SendRSS', 'SendReddit', 'SendFlickr',
     'UpVote', 'DownVote', 'GetVote', 'SetVote',
-    'ActivityMonitor', 'Delete',
-    'SendStickerPack', 'SendStickers']
+    'ActivityMonitor', 'Delete', 'SetTitle',
+    'SendStickerPack', 'SendStickers', 'Pin']
