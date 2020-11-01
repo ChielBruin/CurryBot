@@ -155,7 +155,7 @@ class GetVote(AbstractVote):
 
     def call(self, bot, msg, target, exclude):
         key, (val, users) = self.get_votes(msg)
-        msg.text = str(val)
+        msg.text = msg.text.replace('%d', str(val)) if '%d' in msg.text else str(val)
         return self.propagate(bot, msg, target, exclude)
 
     @classmethod
