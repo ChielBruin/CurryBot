@@ -1,7 +1,7 @@
 from currybot.handlers.messageHandler import MessageHandler
 from currybot.exceptions import FilterException
 from currybot.configResponse import Send, Done, AskChild, NoChild, CreateException
-import requests
+import requests, re
 
 
 class IsValidUrl(MessageHandler):
@@ -9,7 +9,9 @@ class IsValidUrl(MessageHandler):
         super(IsValidUrl, self).__init__(children)
 
     def call(self, bot, message, target, exclude):
-        response = requests.head(message.text)
+        url = message.text if re.match('https?://', message.text) else 'http://%s' % message.text
+        response = requests.head(url, allow_redirects=True)
+        
         if response.status_code < 400:
             return self.propagate(bot, message, target, exclude)
         else:
