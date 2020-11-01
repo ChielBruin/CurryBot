@@ -2,6 +2,7 @@ import inspect
 import json
 import sys
 import traceback
+import re
 
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
@@ -146,7 +147,7 @@ class ConfigConversation(object):
     def copy_start(self, bot, update, user_data):
         msg = update.callback_query.message
         chats = Cache.get_admin_chats(update._effective_user.id)
-        chat_names = [(chat_id, Cache.get_chat_title(chat_id)) for chat_id in chats if not chat_id == user_data['chat_id']]
+        chat_names = [(chat_id, Cache.get_chat_title(chat_id)) for chat_id in chats]
         if chat_names:
             global_button = [[InlineKeyboardButton(text='Global config', callback_data=HandlerGroup.GLOBAL)]] if str(self.bot.admin_chat) in chats else []
             buttons = [[InlineKeyboardButton(text=name, callback_data=str(id))] for (id, name) in chat_names]
@@ -192,8 +193,18 @@ class ConfigConversation(object):
 
         idx = int(update.callback_query.data[3:])
         chat_id = user_data['acc']
-        (name, handler) = handler_group.list(chat_id)[idx]
-        handler_group.register(chat=user_data['chat_id'], name=name, handler=handler)
+        (name, handler_to_copy) = handler_group.list(chat_id)[idx]
+        try:
+            # if we alrady have a handler with the same name, we add a number (or increment an existing number)
+            while (next(filter(lambda x: x[0] == name, handler_group.list(user_data['chat_id'])))):
+                match = re.match(r'(.+)(\d+)', name)
+                if match:
+                    name = match.group(1) + str(int(match.group(2)) + 1)
+                else:
+                    name = name + '2'
+        except StopIteration:
+            pass # StopIteration means that there is no duplicate, so we can skip
+        handler_group.register(chat=user_data['chat_id'], name=name, handler=handler_to_copy)
 
         self.send_or_edit(bot, user_data, update.callback_query.message, 'Copied \'%s\'' % name)
         return ConversationHandler.END
