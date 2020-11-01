@@ -10,6 +10,7 @@ from .sticker   import SendStickerPack, SendStickers
 from .delete    import Delete
 from .title     import SetTitle
 from .pin       import Pin
+from .urlButton import UrlButton
 
 __all__ = [
     'SendTextMessage', 'SendHTMLMessage', 'SendMarkdownMessage',
@@ -17,4 +18,6 @@ __all__ = [
     'SendRSS', 'SendReddit', 'SendFlickr',
     'UpVote', 'DownVote', 'GetVote', 'SetVote',
     'ActivityMonitor', 'Delete', 'SetTitle',
-    'SendStickerPack', 'SendStickers', 'Pin']
+    'SendStickerPack', 'SendStickers', 'Pin',
+    'UrlButton'
+]
