@@ -77,8 +77,8 @@ class IsFrom(MessageHandler):
         if stage == 0:
             return (1, None, Send('Forward me a message from the user you want to filter on'))
         elif stage == 1:
-            if arg.from_user:
-                return (2, (arg.from_user.id, []), AskChild())
+            if arg.forward_from:
+                return (2, (arg.forward_from.id, []), AskChild())
             else:
                 return (1, None, Send('That is not what I asked you to do, try again'))
         elif stage == 2 and isinstance(arg, MessageHandler):
