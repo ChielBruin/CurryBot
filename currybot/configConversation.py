@@ -293,7 +293,8 @@ class ConfigConversation(object):
             if not self.bot.has_handler_with_name(user_data['chat_id'], name):
                 user_data['name'] = name
                 message = 'Select a filter for \'%s\'' % name
-                handlers = map(lambda x: (x[0], x[1].get_name()), filter(lambda x: x[1].is_entrypoint(), enumerate(self.HANDLERS)))
+                handlers = list(map(lambda x: (x[0], x[1].get_name()), filter(lambda x: x[1].is_entrypoint(), enumerate(self.HANDLERS))))
+                handlers.sort(key=lambda x: x[1])
 
                 buttons = [
                  [InlineKeyboardButton(text=desc, callback_data=str(id))] for (id, desc) in handlers
