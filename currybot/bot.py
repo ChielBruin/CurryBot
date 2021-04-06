@@ -106,7 +106,7 @@ class CurryBot(object):
         else:
             return
 
-        chat = update.message.chat
+        chat = message.chat
         if chat.title:  # If not private chat
             Cache.set_chat_title(chat.id, chat.title)
 
