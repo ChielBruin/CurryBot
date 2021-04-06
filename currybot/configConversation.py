@@ -421,8 +421,9 @@ class ConfigConversation(object):
         stack = user_data['stack']
         current_idx = stack[-1][2]
         message = 'Select a handler for %s' % self.HANDLERS[current_idx].get_name()
-        handlers = map(lambda x: (x[0], x[1].get_name()), filter(lambda x: not x[0] is current_idx, enumerate(self.HANDLERS)))
+        handlers = list(map(lambda x: (x[0], x[1].get_name()), enumerate(self.HANDLERS)))
 
+        handlers.sort(key=lambda x: x[1])
         buttons = [
          [InlineKeyboardButton(text=desc, callback_data=str(id))] for (id, desc) in handlers
         ]
