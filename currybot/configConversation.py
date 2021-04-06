@@ -114,7 +114,7 @@ class ConfigConversation(object):
             dict = json.dumps(handler_group.handler_to_dict(chat_id, name))
             user_data['acc'] = (update.callback_query.data[1], chat_id, name)
 
-            self.send_or_edit(bot, user_data, update.callback_query.message, 'Edit this config string and send it back to me:\n%s' % dict)
+            self.send_or_edit(bot, user_data, update.callback_query.message, 'Edit this config string and send it back to me (or type /exit to cancel editing):\n%s' % dict)
             return self.EDIT_HANDLER_PARSE
         except:
             traceback.print_exc()
@@ -122,6 +122,12 @@ class ConfigConversation(object):
     @on_error()
     def edit_end(self, bot, update, user_data):
         user_data['user_msg'] = True
+
+        # If we see the exit command, we cancel the edit
+        if update.message.text == '/exit':
+            self.send_or_edit(bot, user_data, update.message, 'Goodbye')
+            return ConversationHandler.END
+        
         try:
             dict = json.loads(update.message.text)
             group, chat_id, handler_name = user_data['acc']
