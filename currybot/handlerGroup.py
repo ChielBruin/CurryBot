@@ -90,7 +90,9 @@ class HandlerGroup(object):
         new_handler = MessageHandler.class_from_dict(dict).from_dict(dict)
         new_handler.update(self._bot)
 
-        if chat_id in self._handlers:
+        if chat_id == self.GLOBAL:
+            self._global_handlers = [(name, new_handler if name == handler_name else handler) for (name, handler) in self._global_handlers]
+        elif chat_id in self._handlers:
             self._handlers[chat_id] = [(name, new_handler if name == handler_name else handler) for (name, handler) in self._handlers[chat_id]]
 
 
