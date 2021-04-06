@@ -358,7 +358,9 @@ class ConfigConversation(object):
                     InlineKeyboardButton(text='no', callback_data='-1')
                 ]]
 
-                self.send_or_edit(bot, user_data, msg, message, buttons)
+                print(msg.text, message)
+                if msg.text != message:
+                    self.send_or_edit(bot, user_data, msg, message, buttons)
                 return self.ADD_HANDLER_CHILD
 
             elif isinstance(res, AskCacheKey):
