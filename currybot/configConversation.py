@@ -436,8 +436,14 @@ class ConfigConversation(object):
         current_idx = stack[-1][2]
         user_id = update.callback_query.from_user.id
 
-        keys = [key for chat_id in Cache.get_admin_chats(user_id) for key in Cache.get_chat_keys(chat_id)]
-        if keys:
+        # Get the chats where the user is admin.
+        # If it includes the admin chat, we also add the GLOBAL key
+        chats_where_admin = list(Cache.get_admin_chats(user_id))
+        if (str(self.bot.admin_chat) in chats_where_admin):
+            chats_where_admin.append('GLOBAL')
+        
+        keys = [key for chat_id in chats_where_admin for key in Cache.get_chat_keys(chat_id)]
+        if len(keys) == 0:
             message = 'You do not have access to any existing keys, please send me a valid key'
             buttons = None
         else:
