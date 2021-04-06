@@ -83,7 +83,7 @@ class Cache(object):
         if not os.path.exists(loc):
             os.makedirs(loc)
         if os.path.isfile(loc):
-            Logger.log_error('The specified cache location must be a folder, not \'%\'' % loc)
+            Logger.log_error('The specified cache location must be a folder, not \'%s\'' % loc)
             raise Exception()
         cls.cache_location = os.path.join(loc, 'bot_cache.json')
         cls.meta_location  = os.path.join(loc, 'bot_metadata.json')
