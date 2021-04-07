@@ -122,7 +122,7 @@ class SetVote(AbstractVote):
 
     @classmethod
     def _from_dict(cls, dict, children):
-        return UpVote(dict['key'], dict['votes'], children)
+        return SetVote(dict['key'], dict['votes'], children)
 
     def _to_dict(self):
         return {'key': self.key, 'votes': self.votes}
