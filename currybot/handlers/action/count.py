@@ -31,7 +31,7 @@ class AbstractCount(MessageHandler):
         new_val = self.do_count(val)
         Cache.put(self.key, new_val)
 
-        msg.text = msg.text.replace('%d', str(val), 1) if msg.text and '%d' in msg.text else str(val)
+        msg.text = msg.text.replace('%d', str(new_val), 1) if msg.text and '%d' in msg.text else str(new_val)
         return self.propagate(bot, msg, target, exclude)
 
     def has_effect(self):
