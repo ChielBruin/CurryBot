@@ -13,7 +13,7 @@ class IsCommand(MessageHandler):
         self._command = cmd
 
     def call(self, bot, message, target, exclude):
-        commands = list(filter(lambda e: e.type == MessageEntity.BOT_COMMAND, message.entities))
+        commands = [e for e in message.entities if e.type == MessageEntity.BOT_COMMAND]
         if commands:   # TODO: add check if there is no mention of an other bot
             match = re.match(self._command, message.text)
             if match:
@@ -26,7 +26,7 @@ class IsCommand(MessageHandler):
 
     @classmethod
     def get_name(cls):
-        return 'Message is command'
+        return 'Is command'
 
     @classmethod
     def create(cls, stage, data, arg):

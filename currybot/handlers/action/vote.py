@@ -43,7 +43,7 @@ class AbstractVote(MessageHandler):
             raise Exception('You cannot vote on an empty message')
         res, val = self.apply_vote(msg)
         if res:
-            msg.text = str(val)
+            msg.text = msg.text.replace('%d', str(val), 1) if '%d' in msg.text else str(val)
             return self.propagate(bot, msg, target, exclude)
         else:
             raise FilterException()
@@ -161,7 +161,7 @@ class GetVote(AbstractVote):
 
     def call(self, bot, msg, target, exclude):
         key, (val, users) = self.get_votes(msg)
-        msg.text = msg.text.replace('%d', str(val)) if '%d' in msg.text else str(val)
+        msg.text = msg.text.replace('%d', str(val), 1) if '%d' in msg.text else str(val)
         return self.propagate(bot, msg, target, exclude)
 
     @classmethod
