@@ -11,6 +11,7 @@ from .delete    import Delete
 from .title     import SetTitle
 from .pin       import Pin
 from .urlButton import UrlButton
+from .count     import Increment, Decrement, GetCount, SetCount
 
 __all__ = [
     'SendTextMessage', 'SendHTMLMessage', 'SendMarkdownMessage',
@@ -19,5 +20,5 @@ __all__ = [
     'UpVote', 'DownVote', 'GetVote', 'SetVote',
     'ActivityMonitor', 'Delete', 'SetTitle',
     'SendStickerPack', 'SendStickers', 'Pin',
-    'UrlButton'
+    'UrlButton', 'Increment', 'Decrement', 'GetCount', 'SetCount'
 ]
