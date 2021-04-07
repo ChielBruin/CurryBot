@@ -30,7 +30,6 @@ class Handler(object):
             child.update(bot)
 
     def propagate(self, bot, message, target, exclude):
-        print(message.text, self)
         res = []
         do_copy = len(self.children) > 1
         for child in self.children:

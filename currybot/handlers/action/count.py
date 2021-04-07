@@ -19,10 +19,11 @@ class AbstractCount(MessageHandler):
 
     # Getter for the current count
     def get_count(self):
-        out = int(Cache.get(self.key))
+        out = Cache.get(self.key)
         if not out:
             return 0
-        return out
+        else:
+            return int(out)
 
     # When called, we get the count, apply the modifier and return the result
     def call(self, bot, msg, target, exclude):

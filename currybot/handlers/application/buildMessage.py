@@ -38,7 +38,7 @@ class BuildMessage(MessageHandler):
     @classmethod
     def create(cls, stage, data, arg):
         if stage == 0:
-            return (1, None, Send('Send me the new message text. Valid placeholders:\n%h -> The user handle\n%f -> The first name of the user\n%l The last name of the user\n%n -> The name of the user\n%s -> The original message'))
+            return (1, None, Send('Send me the new message text. Valid placeholders:\n%h -> The user handle\n%f -> The first name of the user\n%l The last name of the user\n%n -> The name of the user\n%s -> The original message\n%d -> The current amount (used for counting and voting, only replaces first)'))
         elif stage == 1:
             if arg.text:
                return (2, [arg.text, []], AskChild())
