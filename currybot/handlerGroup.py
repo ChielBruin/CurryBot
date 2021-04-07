@@ -1,4 +1,5 @@
 import traceback
+import copy
 
 from .handlers.messageHandler import MessageHandler
 from .exceptions import FilterException
@@ -127,11 +128,11 @@ class HandlerGroup(object):
         for message in messages:
             if not Cache.chat_is_standalone(message.chat.id):
                 for (_, handler) in self._global_handlers:
-                    self._call_handler(handler, bot, message)
+                    self._call_handler(handler, bot, copy.copy(message))
             chat_id = str(message.chat.id)
             if chat_id in self._handlers:
                 for (_, handler) in self._handlers[chat_id]:
-                    self._call_handler(handler, bot, message)
+                    self._call_handler(handler, bot, copy.copy(message))
 
     def migrate(self, from_id, to_id):
         if from_id in self._handlers:
