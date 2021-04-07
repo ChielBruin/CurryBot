@@ -23,7 +23,7 @@ class BuildMessage(MessageHandler):
             name = '%s %s' % (user.first_name, user.last_name) if user.last_name else user.first_name
             reply_text = reply_text.replace('%n', name)
         if '%s' in reply_text:
-            reply_text = reply_text % message.text
+            reply_text = reply_text.replace('%s', message.text)
 
         return reply_text
 
