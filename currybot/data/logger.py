@@ -70,15 +70,15 @@ class Logger(object):
 
     @classmethod
     def _get_level_string(cls, level):
-        if level is 0:
+        if level == 0:
             return ('TRACE', 39)
-        elif level is 1:
+        elif level == 1:
             return ('DEBUG', 96)
-        elif level is 2:
+        elif level == 2:
             return ('INFO', 92)
-        elif level is 3:
+        elif level == 3:
             return ('WARNING', 93)
-        elif level is 4:
+        elif level == 4:
             return ('ERROR', 31)
         else:
             cls.log_error('Undefined level log %d' % level)
