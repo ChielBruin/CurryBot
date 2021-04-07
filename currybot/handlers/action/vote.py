@@ -135,7 +135,7 @@ class SetVote(AbstractVote):
             return (2, arg, Send('Which value should the votes be updated to?'))
         elif stage == 2 and arg:
             if arg.text and re.match(r'-?[\d]+', arg.text):
-                return (3, (arg, int(arg.text), []), AskChild())
+                return (3, (data, int(arg.text), []), AskChild())
             else:
                 return (2, arg, Send('That is not a valid number of votes'))
         elif stage == 3 and arg:

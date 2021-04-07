@@ -118,10 +118,10 @@ class SetCount(AbstractCount):
         if stage == 0:
             return (1, None, AskCacheKey(default={}))
         elif stage == 1 and arg:
-            return (2, arg, Send('Which value should the votes be updated to?'))
+            return (2, arg, Send('Which value should the counter be updated to?'))
         elif stage == 2 and arg:
             if arg.text and re.match(r'-?[\d]+', arg.text):
-                return (3, (arg, int(arg.text), []), AskChild())
+                return (3, (data, int(arg.text), []), AskChild())
             else:
                 return (2, arg, Send('That is not a valid number of votes'))
         elif stage == 3 and arg:
@@ -129,8 +129,8 @@ class SetCount(AbstractCount):
                 data[2].append(arg)
                 return (3, data, AskChild())
             else:
-                key, votes, children = data
-                return (-1, None, Done(SetCount(key, votes, children)))
+                key, count, children = data
+                return (-1, None, Done(SetCount(key, count, children)))
         else:
             print(stage, data, arg)
             raise CreateException('Invalid create state for Count')
@@ -140,7 +140,7 @@ class SetCount(AbstractCount):
 class GetCount(AbstractCount):
     @classmethod
     def get_name(cls):
-        return "Get number of votes"
+        return "Get counter value"
 
     @classmethod
     def _from_dict(cls, dict, children):
