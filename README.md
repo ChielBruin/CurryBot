@@ -4,75 +4,48 @@ These stickers are selected randomly from given stickerpacks.
 
 ## Usage
 ```bash
-python src/main.py example_config.json
-```
-or
-```bash
-python src/main.py my_config.json <API-TOKEN>
+python3 src/main.py example_config.json
 ```
 Note that if you want the bot to reply to messages matching a given regex, 'privacy mode' should be disabled.
 
-### Config
+### Initial Config
+The bot has two types of configurations.
+The first is is stored in a JSON-file that is provided when the bot is launched.
+This file contains the essential information that is needed to Initialize the bot.
+
+In this file 3 required fields must be specified:
+- The Telegram API token of the bot
+- The directory where the bot will store its configuration and cache
+- The encryption key used for encrypting certain secret information (like API-keys) when writing to disk
+Optionally a Telegram chat can be configured to be the admin chat of the bot.
+Members of this chat can be assigned to update the configuration of global actions and the bot will post errors directly to this chat.
+
 ```json
 {
-    "api-token": "<API-TOKEN here>",
-    "Hmmm": {
-        "triggers": {
-            "commands": ["hmmm"],
-            "Regex": ["[Hh][mM]+(\\s.*)?$"]
-        },
-        "replies": {
-            "stickers" : [{"pack": "thonkang", "exclude":["<sticker_id>"]}]
-        },
-        "amount" : 1,
-        "accuracy": 0.9,
-        "replyBehaviour": {
-            "message": "reply -> send*",
-            "reply": "transitiveReply -> send*",
-        },
-    },
+  "API-token": "<API-Token here>",
+  "cache-dir": "cache",
+  "encryption-key": "VerySecretKey",
+  "admin-chat": <chat-id>
 }
 ```
 
-- `telegram-api-token`*: The Telegram api-token of the bot
-- `flickr-api-token`*: The Flickr api-token of the bot
-- `<action name>`: A name for this reply action
-  - `triggers`: Configure what triggers a reply
-    - `commands`*: A list of commands that trigger this action
-    - `messageRegex`*: A list of regexes that if it matches (from the start of a message) will trigger the action
-    - `url`*: A list of (parts of) urls that trigger this action
-    - `audio`*: boolean whether to trigger this action (`false` by default)
-    - `video`*: boolean whether to trigger this action (`false` by default)
-    - `image`*: boolean whether to trigger this action (`false` by default)
-    - `contact`*: boolean whether to trigger this action (`false` by default)
-    - `document`*: boolean whether to trigger this action (`false` by default)
-    - `sticker`*: boolean whether to trigger this action (`false` by default)
-    - `voice`*: boolean whether to trigger this action (`false` by default)
-  - `replies`: The possible replies for this action, can be both messages and stickers
-    - `stickers`*:
-      - `pack`: The id of the Telegram sticker pack to select stickers from
-      - `include`*: whitelisted sticker IDs
-      - `exclude`*: blacklisted sticker IDs
-    - `messages`*: List of messages that can be used as a reply. Messages can be templated using `\\<INT>` to insert matched groups from the original message.
-    - `flickr_images`*:
-      - `imageset`: The id of the Flickr album to select pictures from
-      - `include`*: whitelisted image IDs
-      - `exclude`*: blacklisted image IDs
-    - `forward`*:
-      - `chat_id`: The id of the chat the message is from
-      - `message_id`: The id of the message in that chat
-  - `amount`: The amount of stickers to reply
-  - `accuracy`*: The chance that a trigger will result in a reply. Can be either a number between 0 an 1, or a percentage (e.g. "25%")
-  - `chats`*: Whitelist or blacklist certain chats
-    - `include`*: List of chat_ids to whitelist
-    - `exclude`*: List of chat_ids to blacklist
-  - `replyBehaviour`: The behaviour for replying to given message types. The behaviour is a list of actions separated by `->`, where valid actions are `reply`, `transitiveReply`, `send` and `none`.
-    - `message`*: Rule used for normal messages
-    - `reply`*: Rule used for replies
-    - `forward`*: Rule used for forwarded messages
+### Configuring the bot
+Adding actions to the bot is done by starting a conversation with the bot in a private chat.
+This conversation is initiated by sending the `/config`-command.
+In this conversation the bot gives you the choice to add, remove or edit an action in a chat where you are assigned admin of the bot.
+When adding the bot to a chat, you are automatically assigned admin and are therefore able to configure the behaviour of the bot in that chat.
+A new admin is added when a user that is already an admin replies `/makeadmin` to a message from the user this will be added.
 
-
-*) Optional
-
-Use the `/info` command to print the current chat_id to console.
-If this command is replied to a sticker, the sticker_id and stickerset_id will be displayed as well.
+An action is created by constructing a tree of handlers where each handler could filter on the content of the message or perform an action like sending a message.
+A handler can propagate a message to its children, creating more complex behaviour (for example: message is a reply __and__ message is a command __and__ today is a Monday __then__ send a sticker).
+Possible filters and actions include (among others):
+- Matching the message with a regex
+- Filtering based on the current time
+- Monitoring user or chat activity
+- Filtering on inactivity
+- Sending a picture from a Flickr album
+- Sending a sticker
+- Forwarding a message
+- Adding a video to a Youtube playlist
+- Voting on messages
+- Sending items from RSS feeds
