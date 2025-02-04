@@ -17,7 +17,8 @@ In this file 3 required fields must be specified:
 - The Telegram API token of the bot
 - The directory where the bot will store its configuration and cache
 - The encryption key used for encrypting certain secret information (like API-keys) when writing to disk
-Optionally a Telegram chat can be configured to be the admin chat of the bot.
+
+Optionally, a Telegram chat can be configured to be the admin chat of the bot.
 Members of this chat can be assigned to update the configuration of global actions and the bot will post errors directly to this chat.
 
 ```json
