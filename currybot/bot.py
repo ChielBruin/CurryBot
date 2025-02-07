@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 import traceback
 
-from telegram.ext import Updater, Filters, CallbackQueryHandler
+from telegram.ext import Application, Updater, filters, CallbackQueryHandler
 from telegram.ext import MessageHandler as TelegramMessageHandler
 from telegram import Chat, Message
 
@@ -71,18 +71,20 @@ class CurryBot(object):
         self.button_handlers  = None
 
     def set_token(self, token):
-        self.updater = Updater(token, user_sig_handler=lambda s, f, self=self: self.on_exit())
-        self.dispatcher = self.updater.dispatcher
+        self.app = Application.builder().token(token).post_shutdown(lambda _: self.on_exit()).build()
+        self.updater = self.app.updater
+        # self.updater = Updater(token, user_sig_handler=lambda s, f, self=self: self.on_exit())
+
         self.bot = self.updater.bot
 
         self.message_handlers = HandlerGroup(self.bot)
         self.tick_handlers    = HandlerGroup(self.bot)
         self.button_handlers  = HandlerGroup(self.bot)
 
-        self.dispatcher.add_handler(ConfigConversation(self).get_conversation_handler())
-        self.dispatcher.add_handler(CallbackQueryHandler(
+        self.app.add_handler(ConfigConversation(self).get_conversation_handler())
+        self.app.add_handler(CallbackQueryHandler(
                             (lambda bot, update, self=self: self.on_receive_callback(bot, update))))
-        self.dispatcher.add_handler(TelegramMessageHandler(Filters.all,
+        self.app.add_handler(TelegramMessageHandler(filters.ALL,
                             (lambda bot, update, self=self: self.on_receive(bot, update))))
 
     def init_logger(self):
