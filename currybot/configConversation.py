@@ -7,7 +7,7 @@ import re
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import CommandHandler, CallbackQueryHandler, ConversationHandler, MessageHandler
-from telegram.ext.filters import Filters
+from telegram.ext import filters
 
 from currybot.configResponse import Send, Done, AskChild, NoChild, AskCacheKey, AskAPIKey, CreateException
 from currybot.data import Logger, Cache
@@ -592,64 +592,64 @@ class ConfigConversation(object):
 
     def get_conversation_handler(self):
         conv_handler = ConversationHandler(
-            entry_points=[CommandHandler('config', self.start, pass_user_data=True)],
+            entry_points=[CommandHandler('config', self.start, )],
             conversation_timeout=3600,  # Timeout after an hour
             states={
                 self.SELECT_CHAT: [
-                    CallbackQueryHandler(self.end, pattern='^%s$' % self.EXIT, pass_user_data=True),
-                    CallbackQueryHandler(self.edit_chat, pattern='^(%s)|(-?[0-9]{5,})$' % HandlerGroup.GLOBAL, pass_user_data=True)
+                    CallbackQueryHandler(self.end, pattern='^%s$' % self.EXIT, ),
+                    CallbackQueryHandler(self.edit_chat, pattern='^(%s)|(-?[0-9]{5,})$' % HandlerGroup.GLOBAL, )
                 ],
                 self.SELECT_ACTION: [
-                    CallbackQueryHandler(self.end, pattern='^%s$' % self.EXIT, pass_user_data=True),
-                    CallbackQueryHandler(self.add_start, pattern='^%s$' % self.ADD, pass_user_data=True),
-                    CallbackQueryHandler(self.edit_start, pattern='^%s$' % self.EDIT, pass_user_data=True),
-                    CallbackQueryHandler(self.remove_start, pattern='^%s$' % self.REMOVE, pass_user_data=True),
-                    CallbackQueryHandler(self.copy_start, pattern='^%s$' % self.COPY, pass_user_data=True),
-                    CallbackQueryHandler(self.toggle_standalone, pattern='^%s$' % self.TOGGLE, pass_user_data=True)
+                    CallbackQueryHandler(self.end, pattern='^%s$' % self.EXIT, ),
+                    CallbackQueryHandler(self.add_start, pattern='^%s$' % self.ADD, ),
+                    CallbackQueryHandler(self.edit_start, pattern='^%s$' % self.EDIT, ),
+                    CallbackQueryHandler(self.remove_start, pattern='^%s$' % self.REMOVE, ),
+                    CallbackQueryHandler(self.copy_start, pattern='^%s$' % self.COPY, ),
+                    CallbackQueryHandler(self.toggle_standalone, pattern='^%s$' % self.TOGGLE, )
                 ],
                 self.COPY_HANDLER: [
-                    CallbackQueryHandler(self.copy_select_handler, pattern='^-?[\d]+$', pass_user_data=True),
-                    CallbackQueryHandler(self.copy_handler, pattern='^_[012]_[\d]+$', pass_user_data=True),
+                    CallbackQueryHandler(self.copy_select_handler, pattern='^-?[\d]+$', ),
+                    CallbackQueryHandler(self.copy_handler, pattern='^_[012]_[\d]+$', ),
                 ],
                 self.REMOVE_HANDLER: [
-                    CallbackQueryHandler(self.remove_end, pattern='^_[0123]_-?[\d]+$', pass_user_data=True)
+                    CallbackQueryHandler(self.remove_end, pattern='^_[0123]_-?[\d]+$', )
                 ],
                 self.ADD_HANDLER_INITIAL: [
-                    CallbackQueryHandler(self.add_initial_type_tick, pattern='^0$', pass_user_data=True),
-                    CallbackQueryHandler(self.add_initial_type_msg, pattern='^1$', pass_user_data=True),
-                    CallbackQueryHandler(self.add_initial_type_button, pattern='^2$', pass_user_data=True),
-                    MessageHandler(Filters.all, self.add_initial, pass_user_data=True)
+                    CallbackQueryHandler(self.add_initial_type_tick, pattern='^0$', ),
+                    CallbackQueryHandler(self.add_initial_type_msg, pattern='^1$', ),
+                    CallbackQueryHandler(self.add_initial_type_button, pattern='^2$', ),
+                    MessageHandler(filters.ALL, self.add_initial, )
                 ],
                 self.ADD_HANDLER_STEP: [
-                    CallbackQueryHandler(self.add_handler_callback, pattern='^[0-9]+$', pass_user_data=True),
-                    CallbackQueryHandler(self.add_handler_button_callback, pattern='^[a-zA-Z].*$', pass_user_data=True),
-                    MessageHandler(Filters.all, self.add_handler_message, pass_user_data=True)
+                    CallbackQueryHandler(self.add_handler_callback, pattern='^[0-9]+$', ),
+                    CallbackQueryHandler(self.add_handler_button_callback, pattern='^[a-zA-Z].*$', ),
+                    MessageHandler(filters.ALL, self.add_handler_message, )
                 ],
                 self.ADD_HANDLER_CHILD: [
-                    CallbackQueryHandler(self.add_handler_no_child_callback, pattern='^-1$', pass_user_data=True),
-                    CallbackQueryHandler(self.add_handler_select_child_callback, pattern='^-2$', pass_user_data=True),
-                    CallbackQueryHandler(self.add_handler_callback, pattern='^[0-9]+$', pass_user_data=True)
+                    CallbackQueryHandler(self.add_handler_no_child_callback, pattern='^-1$', ),
+                    CallbackQueryHandler(self.add_handler_select_child_callback, pattern='^-2$', ),
+                    CallbackQueryHandler(self.add_handler_callback, pattern='^[0-9]+$', )
                 ],
                 self.ADD_HANDLER_CACHE_KEY: [
-                    CallbackQueryHandler(self.add_handler_key_callback, pattern='^0_.+$', pass_user_data=True),
-                    CallbackQueryHandler(self.add_handler_new_cache_key_callback, pattern='^%s$' % self.ADD, pass_user_data=True),
-                    CallbackQueryHandler(self.add_handler_select_cache_key_callback, pattern='^%s$' % self.COPY, pass_user_data=True),
-                    MessageHandler(Filters.all, self.add_handler_cache_key_msg, pass_user_data=True)
-                ],
-                self.ADD_HANDLER_API_KEY: [
-                    CallbackQueryHandler(self.add_handler_key_callback, pattern='^0_.+$', pass_user_data=True),
-                    CallbackQueryHandler(self.add_handler_new_api_key_callback, pattern='^%s$' % self.ADD, pass_user_data=True),
-                    CallbackQueryHandler(self.add_handler_select_api_key_callback, pattern='^%s$' % self.COPY, pass_user_data=True),
-                    MessageHandler(Filters.all, self.add_handler_api_key_msg, pass_user_data=True)
+                    CallbackQueryHandler(self.add_handler_key_callback, pattern='^0_.+$', ),
+                    CallbackQueryHandler(self.add_handler_new_cache_key_callback, pattern='^%s$' % self.ADD, ),
+                    CallbackQueryHandler(self.add_handler_select_cache_key_callback, pattern='^%s$' % self.COPY, ),
+                        MessageHandler(filters.ALL, self.add_handler_cache_key_msg, )
+                    ],
+                    self.ADD_HANDLER_API_KEY: [
+                        CallbackQueryHandler(self.add_handler_key_callback, pattern='^0_.+$', ),
+                        CallbackQueryHandler(self.add_handler_new_api_key_callback, pattern='^%s$' % self.ADD, ),
+                        CallbackQueryHandler(self.add_handler_select_api_key_callback, pattern='^%s$' % self.COPY, ),
+                        MessageHandler(filters.ALL, self.add_handler_api_key_msg, )
                 ],
                 self.EDIT_HANDLER: [
-                    CallbackQueryHandler(self.edit_send, pattern='^_[0123]_-?[\d]+$', pass_user_data=True)
+                    CallbackQueryHandler(self.edit_send, pattern='^_[0123]_-?[\d]+$', )
                 ],
                 self.EDIT_HANDLER_PARSE: [
-                    MessageHandler(Filters.all, self.edit_end, pass_user_data=True)
+                    MessageHandler(filters.ALL, self.edit_end, )
                 ]
             },
-            fallbacks=[CommandHandler('cancel', self.cancel, pass_user_data=True)]
+            fallbacks=[CommandHandler('cancel', self.cancel, )]
         )
         return conv_handler
 
